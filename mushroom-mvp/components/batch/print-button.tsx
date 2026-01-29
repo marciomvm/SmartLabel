@@ -21,7 +21,8 @@ export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProp
 
         startTransition(async () => {
             try {
-                const response = await fetch('/api/print', {
+                // Direct fetch to local Python service (bypasses Vercel server)
+                const response = await fetch('http://localhost:5000/print-label', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
