@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mushroom MVP 🍄
 
-## Getting Started
+A production management system for mushroom farms. Includes batch tracking, genealogy lineage, and barcode printing.
 
-First, run the development server:
+## 🚀 Features
+- **Batch Tracking**: Track Grain -> Substrate -> Bulk batches.
+- **Traceability**: Link batches to parents (Grain-to-Grain transfers).
+- **Dashboard**: Real-time stats on "Ready" and "Incubating" stock.
+- **Scanning**: Optimized for barcode scanners (or manual entry).
+- **Label Printing**: Integrates with NIIMBOT B1 thermal printers.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🛠️ Deployment on Vercel
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Push to GitHub**:
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/mushroom-mvp.git
+   git branch -M main
+   git push -u origin main
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Import to Vercel**:
+   - Go to [Vercel](https://vercel.com) -> "Add New Project".
+   - Select your GitHub repo.
+   - **Environment Variables**:
+     Add the following variables in Vercel settings:
+     ```bash
+     NEXT_PUBLIC_SUPABASE_URL=https://wjixkrgakcjxtvhczwyf.supabase.co
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1Ni... (Use your local .env key)
+     ```
+   - Click **Deploy**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🖨️ Setting Up Printing (Hybrid Mode)
 
-## Learn More
+Since Vercel runs in the cloud, it cannot access your local USB/Bluetooth printer directly. We use a **Hybrid Approach**:
 
-To learn more about Next.js, take a look at the following resources:
+1. **On your PC**: Run the Python Print Service.
+   ```powershell
+   cd print-service
+   pip install flask flask-cors pillow qrcode[pil] bleak
+   python app.py
+   ```
+   *Keep this running whenever you want to print.*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **On the Web App (Vercel)**:
+   - When you click "Print Label", the website talks directly to `localhost:5000` on your computer.
+   - Chrome/Edge will allow this connection.
+   
+3. **From Mobile**:
+   - If using the app on phone, the "Print" button will fail to connect to your PC's Python service (unless you own the network config).
+   - **Fallback**: The button will error but provide the generated image. Save it and print using the NIIMBOT app.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📚 Documentation
+- [User Manual](./USER_MANUAL.md) - How to use the app.
+- [Print Service](./print-service/README.md) - Deep dive on the printer integration.
