@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowUp, ArrowDown, AlertOctagon } from 'lucide-react'
 import { PrintLabelButton } from '@/components/batch/print-button'
+import { DeleteBatchButton } from '@/components/batch/delete-button'
 
 // Next.js 15: params is a Promise
 export default async function BatchDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -163,13 +164,24 @@ export default async function BatchDetailsPage({ params }: { params: Promise<{ i
                 </Card>
             </div>
 
-            {/* Notes or Events Log Placeholder */}
+            {/* NOTE/EVENTS */}
             <Card>
                 <CardHeader><CardTitle className="text-sm">Notes</CardTitle></CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">{batch.notes || "No notes."}</p>
                 </CardContent>
             </Card>
+
+            {/* DANGER ZONE (Delete) */}
+            <div className="border border-red-200 rounded-xl p-6 bg-red-50/50">
+                <h3 className="text-red-900 font-bold mb-2 text-sm uppercase tracking-wider">Danger Zone</h3>
+                <div className="flex items-center justify-between">
+                    <div className="text-sm text-red-700">
+                        Permanently delete this batch and all its history.
+                    </div>
+                    <DeleteBatchButton id={batch.id} />
+                </div>
+            </div>
         </div>
     )
 }

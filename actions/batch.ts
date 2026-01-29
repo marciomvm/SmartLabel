@@ -189,3 +189,18 @@ export async function createBulkBatches(data: {
     revalidatePath('/')
     return createdBatches as Batch[]
 }
+
+export async function deleteBatch(id: string) {
+    const { error } = await supabase
+        .from('mush_batches')
+        .delete()
+        .eq('id', id)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath('/batches')
+    revalidatePath('/')
+    redirect('/batches')
+}
