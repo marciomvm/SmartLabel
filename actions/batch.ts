@@ -131,7 +131,11 @@ export async function createBulkBatches(data: {
 
     // Generate date prefix
     const today = new Date()
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+    // DDMMYYYY format
+    const dd = String(today.getDate()).padStart(2, '0')
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const yyyy = today.getFullYear()
+    const dateStr = `${dd}${mm}${yyyy}`
 
     // Get type prefix
     const typePrefix = data.type === 'GRAIN' ? 'G' : data.type === 'SUBSTRATE' ? 'S' : 'B'
