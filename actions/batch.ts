@@ -102,25 +102,41 @@ export async function getStrains() {
 }
 
 export async function createBulkBatches(data: {
-    parent_readable_id: string
+    parent_readable_id?: string
+    strain_id?: string
     type: BatchType
     quantity: number
     notes?: string
 }) {
-    // 1. Resolve parent
-    const parent = await getBatchByReadableId(data.parent_readable_id)
-    if (!parent) {
-        throw new Error(`Parent batch ${data.parent_readable_id} not found.`)
+    let parent_id: string | undefined = undefined
+    let strain_id: string | undefined = data.strain_id
+
+    // GRAIN mode: no parent, requires strain_id
+    // SUBSTRATE/BULK mode: requires parent, inherits strain
+    if (data.type === 'GRAIN') {
+        if (!strain_id) {
+            throw new Error('Strain is required for GRAIN batches.')
+        }
+    } else {
+        if (!data.parent_readable_id) {
+            throw new Error('Parent Source ID is required for SUBSTRATE/BULK batches.')
+        }
+        const parent = await getBatchByReadableId(data.parent_readable_id)
+        if (!parent) {
+            throw new Error(`Parent batch ${data.parent_readable_id} not found.`)
+        }
+        parent_id = parent.id
+        strain_id = parent.strain_id
     }
 
-    // 2. Generate date prefix
+    // Generate date prefix
     const today = new Date()
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
 
-    // 3. Get type prefix
+    // Get type prefix
     const typePrefix = data.type === 'GRAIN' ? 'G' : data.type === 'SUBSTRATE' ? 'S' : 'B'
 
-    // 4. Find highest existing sequence for today
+    // Find highest existing sequence for today
     const { data: existingToday } = await supabase
         .from('mush_batches')
         .select('readable_id')
@@ -135,7 +151,7 @@ export async function createBulkBatches(data: {
         startSeq = lastSeq + 1
     }
 
-    // 5. Create batch records
+    // Create batch records
     const batches = []
     for (let i = 0; i < data.quantity; i++) {
         const seq = String(startSeq + i).padStart(2, '0')
@@ -143,13 +159,13 @@ export async function createBulkBatches(data: {
         batches.push({
             readable_id,
             type: data.type,
-            strain_id: parent.strain_id,
-            parent_id: parent.id,
+            strain_id,
+            parent_id,
             notes: data.notes || ''
         })
     }
 
-    // 6. Insert all at once
+    // Insert all at once
     const { data: createdBatches, error } = await supabase
         .from('mush_batches')
         .insert(batches)
@@ -160,12 +176,12 @@ export async function createBulkBatches(data: {
         throw new Error(error.message)
     }
 
-    // 7. Log events
+    // Log events
     for (const batch of createdBatches) {
         await supabase.from('mush_events').insert({
             batch_id: batch.id,
             action_type: 'CREATED',
-            details: { bulk_created: true, parent: data.parent_readable_id }
+            details: { bulk_created: true, parent: data.parent_readable_id || 'none' }
         })
     }
 

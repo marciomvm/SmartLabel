@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBulkBatches } from '@/actions/batch'
+import { createBulkBatches, getStrains } from '@/actions/batch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,22 +16,39 @@ export default function BulkCreatePage() {
 
     const [formData, setFormData] = useState({
         parent_readable_id: '',
-        type: 'SUBSTRATE' as BatchType,
+        strain_id: '',
+        type: 'GRAIN' as BatchType,
         quantity: 10,
         notes: ''
     })
 
+    const [strains, setStrains] = useState<any[]>([])
     const [createdBatches, setCreatedBatches] = useState<Batch[]>([])
     const [error, setError] = useState('')
     const [isPending, startTransition] = useTransition()
     const [isPrinting, setIsPrinting] = useState(false)
+
+    useEffect(() => {
+        getStrains().then(data => {
+            setStrains(data || [])
+            if (data && data.length > 0) {
+                setFormData(prev => ({ ...prev, strain_id: data[0].id }))
+            }
+        })
+    }, [])
+
+    const isGrainMode = formData.type === 'GRAIN'
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
         setCreatedBatches([])
 
-        if (!formData.parent_readable_id) {
+        if (isGrainMode && !formData.strain_id) {
+            setError('Strain is required for Grain batches')
+            return
+        }
+        if (!isGrainMode && !formData.parent_readable_id) {
             setError('Parent Source ID is required')
             return
         }
@@ -43,7 +60,8 @@ export default function BulkCreatePage() {
         startTransition(async () => {
             try {
                 const batches = await createBulkBatches({
-                    parent_readable_id: formData.parent_readable_id,
+                    parent_readable_id: isGrainMode ? undefined : formData.parent_readable_id,
+                    strain_id: isGrainMode ? formData.strain_id : undefined,
                     type: formData.type,
                     quantity: formData.quantity,
                     notes: formData.notes
@@ -68,7 +86,6 @@ export default function BulkCreatePage() {
                         strain: ''
                     })
                 })
-                // Small delay between prints
                 await new Promise(r => setTimeout(r, 500))
             }
         } catch (err) {
@@ -93,49 +110,84 @@ export default function BulkCreatePage() {
 
                 {createdBatches.length === 0 ? (
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* TYPE SELECTION (First Step) */}
                         <div className="space-y-2">
-                            <Label htmlFor="parent" className="text-base font-semibold">
-                                Parent Source ID (Scan the Grain)
-                            </Label>
+                            <Label htmlFor="type" className="text-base font-semibold">What are you creating?</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['GRAIN', 'SUBSTRATE', 'BULK'] as BatchType[]).map(t => (
+                                    <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, type: t })}
+                                        className={`p-4 rounded-xl border-2 text-center font-semibold transition-all ${formData.type === t
+                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        {t === 'GRAIN' ? '🌾 Grain' : t === 'SUBSTRATE' ? '🧱 Substrate' : '🍄 Bulk'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* GRAIN MODE: Show Strain Selector */}
+                        {isGrainMode && (
+                            <div className="space-y-2 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                <Label htmlFor="strain" className="font-semibold flex items-center gap-2">
+                                    🌾 Select Strain (Cepa)
+                                </Label>
+                                <select
+                                    id="strain"
+                                    className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={formData.strain_id}
+                                    onChange={e => setFormData({ ...formData, strain_id: e.target.value })}
+                                >
+                                    {strains.length === 0 && <option value="">No strains found</option>}
+                                    {strains.map(s => (
+                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-amber-700">
+                                    Grain batches are the root of your production. No parent needed.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* SUBSTRATE/BULK MODE: Show Parent Selector */}
+                        {!isGrainMode && (
+                            <div className="space-y-2 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                <Label htmlFor="parent" className="font-semibold">
+                                    {formData.type === 'SUBSTRATE' ? '🌾 Scan the Parent Grain' : '🧱 Scan the Parent Substrate'}
+                                </Label>
+                                <Input
+                                    id="parent"
+                                    value={formData.parent_readable_id}
+                                    onChange={e => setFormData({ ...formData, parent_readable_id: e.target.value })}
+                                    placeholder="G-20260129-01 or scan..."
+                                    className="font-mono h-12 text-lg"
+                                    autoFocus
+                                />
+                                <p className="text-xs text-blue-700">
+                                    The strain will be inherited from the parent automatically.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* QUANTITY */}
+                        <div className="space-y-2">
+                            <Label htmlFor="quantity" className="font-semibold">Quantity</Label>
                             <Input
-                                id="parent"
-                                value={formData.parent_readable_id}
-                                onChange={e => setFormData({ ...formData, parent_readable_id: e.target.value })}
-                                placeholder="G-001 or scan..."
-                                className="font-mono h-12 text-lg"
-                                autoFocus
+                                id="quantity"
+                                type="number"
+                                min={1}
+                                max={100}
+                                value={formData.quantity}
+                                onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                                className="h-12 text-lg font-bold"
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="type">Batch Type</Label>
-                                <select
-                                    id="type"
-                                    className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    value={formData.type}
-                                    onChange={e => setFormData({ ...formData, type: e.target.value as BatchType })}
-                                >
-                                    <option value="SUBSTRATE">Substrate Block</option>
-                                    <option value="BULK">Bulk / Fruiting</option>
-                                    <option value="GRAIN">Grain Spawn (G2G)</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="quantity">Quantity</Label>
-                                <Input
-                                    id="quantity"
-                                    type="number"
-                                    min={1}
-                                    max={100}
-                                    value={formData.quantity}
-                                    onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                                    className="h-12 text-lg font-bold"
-                                />
-                            </div>
-                        </div>
-
+                        {/* NOTES */}
                         <div className="space-y-2">
                             <Label htmlFor="notes" className="flex items-center gap-2">
                                 R&D Notes (Optional)
@@ -166,7 +218,7 @@ export default function BulkCreatePage() {
                             ) : (
                                 <>
                                     <Package className="mr-2 h-5 w-5" />
-                                    Generate {formData.quantity} Batches
+                                    Generate {formData.quantity} {formData.type} Batches
                                 </>
                             )}
                         </Button>
