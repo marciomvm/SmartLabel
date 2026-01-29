@@ -204,3 +204,19 @@ export async function deleteBatch(id: string) {
     revalidatePath('/')
     redirect('/batches')
 }
+
+export async function deleteBulkBatches(ids: string[]) {
+    if (!ids || ids.length === 0) return
+
+    const { error } = await supabase
+        .from('mush_batches')
+        .delete()
+        .in('id', ids)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath('/batches')
+    revalidatePath('/')
+}
