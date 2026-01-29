@@ -139,6 +139,23 @@ function CreateBatchForm() {
                         </div>
                     )}
 
+                    <div className="space-y-2">
+                        <Label htmlFor="notes" className="flex items-center gap-2">
+                            Kitchen Recipe / P&D Notes
+                            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase font-bold">R&D</span>
+                        </Label>
+                        <textarea
+                            id="notes"
+                            className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={formData.notes}
+                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                            placeholder="Ex: 20% more Soybean, Autoclave at 17psi, New supplement test..."
+                        />
+                        <p className="text-[10px] text-muted-foreground italic">
+                            * Use this for experimental variations to track quality later.
+                        </p>
+                    </div>
+
                     {error && (
                         <Alert variant="destructive">
                             <AlertTitle>Error</AlertTitle>

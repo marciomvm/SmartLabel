@@ -20,10 +20,22 @@ async function getStats() {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
+    const fortyFiveDaysAgo = new Date()
+    fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45)
+
+    // Stats for death rate
     const { data: recentBatches } = await supabase
       .from('mush_batches')
       .select('status')
       .gte('created_at', thirtyDaysAgo.toISOString())
+
+    // Expiring batches logic
+    const { data: expiringBatches } = await supabase
+      .from('mush_batches')
+      .select('readable_id, created_at, type')
+      .eq('status', 'INCUBATING')
+      .lt('created_at', fortyFiveDaysAgo.toISOString())
+      .order('created_at', { ascending: true })
 
     const totalRecent = recentBatches?.length || 0
     const contaminatedRecent = recentBatches?.filter(b => b.status === 'CONTAMINATED').length || 0
@@ -34,10 +46,12 @@ async function getStats() {
     return {
       ready: readyCount || 0,
       incubating: incubatingCount || 0,
-      deathRate
+      deathRate,
+      revenue: (readyCount || 0) * 20,
+      expiring: expiringBatches || []
     }
   } catch (e) {
-    return { ready: 0, incubating: 0, deathRate: '0' }
+    return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [] }
   }
 }
 
@@ -57,13 +71,21 @@ export default async function Home() {
       </section>
 
       {/* Primary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <GlassCard
           title="Ready Stock"
           value={stats.ready}
           subtitle="Batches ready to ship"
           icon={<Package className="h-6 w-6 text-emerald-600" />}
           gradient="from-emerald-500/10 to-teal-500/5"
+        />
+
+        <GlassCard
+          title="Potential Revenue"
+          value={`£${stats.revenue.toLocaleString()}`}
+          subtitle="Stock sitting on shelf"
+          icon={<TrendingUp className="h-6 w-6 text-green-600" />}
+          gradient="from-green-500/15 to-emerald-500/5"
         />
 
         <GlassCard
@@ -77,12 +99,49 @@ export default async function Home() {
         <GlassCard
           title="Contamination"
           value={`${stats.deathRate}%`}
-          subtitle="Rate in the last 30 days"
+          subtitle="Rate (last 30 days)"
           icon={<AlertTriangle className="h-6 w-6 text-red-600" />}
           gradient="from-red-500/10 to-orange-500/5"
           isDestructive={parseFloat(stats.deathRate) > 10}
         />
       </div>
+
+      {/* Alerts Section (BI) */}
+      {stats.expiring.length > 0 && (
+        <section className="animate-in fade-in slide-in-from-left-4 duration-700">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-2xl font-bold">Action Needed / Expiring Soon</h2>
+            <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+              {stats.expiring.length} URGENT
+            </span>
+          </div>
+          <div className="glass overflow-hidden rounded-3xl">
+            <div className="p-1 space-y-1">
+              {stats.expiring.map((batch: any) => (
+                <Link key={batch.readable_id} href={`/batches/${batch.readable_id}`} className="flex items-center justify-between p-4 hover:bg-white/40 transition-colors rounded-2xl group">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-amber-500/20 p-2 rounded-xl group-hover:bg-amber-500/30 transition-colors">
+                      <AlertTriangle className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <div className="font-bold flex items-center gap-2">
+                        {batch.readable_id}
+                        <span className="text-[10px] bg-white/50 px-2 py-0.5 rounded border border-white/20">{batch.type}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Incubating for {Math.floor((new Date().getTime() - new Date(batch.created_at).getTime()) / (1000 * 60 * 60 * 24))} days
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-amber-600 font-semibold text-sm flex items-center gap-1">
+                    Harvest Window <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Quick Access */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
@@ -115,7 +174,7 @@ export default async function Home() {
               </div>
             </div>
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Layers className="h-32 w-32" />
+              <Package className="h-32 w-32" />
             </div>
           </div>
         </Link>
