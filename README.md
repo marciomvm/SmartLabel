@@ -3,9 +3,10 @@
 A production management system for mushroom farms. Includes batch tracking, genealogy lineage, and barcode printing.
 
 ## 🚀 Features
+- **Premium Dashboard**: Glassmorphism UI with real-time stats and visual freshness.
+- **Security Gate**: Password-protected access for privacy.
 - **Batch Tracking**: Track Grain -> Substrate -> Bulk batches.
 - **Traceability**: Link batches to parents (Grain-to-Grain transfers).
-- **Dashboard**: Real-time stats on "Ready" and "Incubating" stock.
 - **Scanning**: Optimized for barcode scanners (or manual entry).
 - **Label Printing**: Integrates with NIIMBOT B1 thermal printers.
 
@@ -24,8 +25,9 @@ A production management system for mushroom farms. Includes batch tracking, gene
    - **Environment Variables**:
      Add the following variables in Vercel settings:
      ```bash
-     NEXT_PUBLIC_SUPABASE_URL=https://wjixkrgakcjxtvhczwyf.supabase.co
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1Ni... (Use your local .env key)
+     NEXT_PUBLIC_SUPABASE_URL=...
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+     APP_PASSWORD=0858902354  # Password for login gate
      ```
    - Click **Deploy**.
 
