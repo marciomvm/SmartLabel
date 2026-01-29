@@ -100,3 +100,76 @@ export async function getStrains() {
     if (error) return []
     return data
 }
+
+export async function createBulkBatches(data: {
+    parent_readable_id: string
+    type: BatchType
+    quantity: number
+    notes?: string
+}) {
+    // 1. Resolve parent
+    const parent = await getBatchByReadableId(data.parent_readable_id)
+    if (!parent) {
+        throw new Error(`Parent batch ${data.parent_readable_id} not found.`)
+    }
+
+    // 2. Generate date prefix
+    const today = new Date()
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+
+    // 3. Get type prefix
+    const typePrefix = data.type === 'GRAIN' ? 'G' : data.type === 'SUBSTRATE' ? 'S' : 'B'
+
+    // 4. Find highest existing sequence for today
+    const { data: existingToday } = await supabase
+        .from('mush_batches')
+        .select('readable_id')
+        .like('readable_id', `${typePrefix}-${dateStr}-%`)
+        .order('readable_id', { ascending: false })
+        .limit(1)
+
+    let startSeq = 1
+    if (existingToday && existingToday.length > 0) {
+        const lastId = existingToday[0].readable_id
+        const lastSeq = parseInt(lastId.split('-')[2], 10)
+        startSeq = lastSeq + 1
+    }
+
+    // 5. Create batch records
+    const batches = []
+    for (let i = 0; i < data.quantity; i++) {
+        const seq = String(startSeq + i).padStart(2, '0')
+        const readable_id = `${typePrefix}-${dateStr}-${seq}`
+        batches.push({
+            readable_id,
+            type: data.type,
+            strain_id: parent.strain_id,
+            parent_id: parent.id,
+            notes: data.notes || ''
+        })
+    }
+
+    // 6. Insert all at once
+    const { data: createdBatches, error } = await supabase
+        .from('mush_batches')
+        .insert(batches)
+        .select()
+
+    if (error) {
+        console.error("Bulk Create Error:", error)
+        throw new Error(error.message)
+    }
+
+    // 7. Log events
+    for (const batch of createdBatches) {
+        await supabase.from('mush_events').insert({
+            batch_id: batch.id,
+            action_type: 'CREATED',
+            details: { bulk_created: true, parent: data.parent_readable_id }
+        })
+    }
+
+    revalidatePath('/batches')
+    revalidatePath('/')
+    return createdBatches as Batch[]
+}
