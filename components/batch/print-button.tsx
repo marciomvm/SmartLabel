@@ -14,6 +14,7 @@ export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProp
     const [isPending, startTransition] = useTransition()
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
     const [message, setMessage] = useState('')
+    const [labelSize, setLabelSize] = useState('40x30')
 
     const handlePrint = () => {
         setStatus('idle')
@@ -28,13 +29,14 @@ export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProp
                     body: JSON.stringify({
                         batch_id: batchId,
                         batch_type: batchType,
-                        strain: strain || ''
+                        strain: strain || '',
+                        label_size: labelSize
                     })
                 })
 
                 const data = await response.json()
 
-                if (data.success) {
+                if (data.status === 'printed' || data.success) { // Handle both response formats if needed
                     setStatus('success')
                     setMessage(data.message || 'Label ready!')
                 } else {
@@ -50,6 +52,21 @@ export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProp
 
     return (
         <div className="space-y-2">
+            <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Label Size</label>
+                <select
+                    value={labelSize}
+                    onChange={(e) => setLabelSize(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <option value="40x30">40x30mm (Standard)</option>
+                    <option value="50x30">50x30mm (Wide)</option>
+                    <option value="30x15">30x15mm (Small)</option>
+                    <option value="40x70">40x70mm (Vertical)</option>
+                    <option value="50x50">50x50mm (Square)</option>
+                </select>
+            </div>
+
             <Button
                 onClick={handlePrint}
                 disabled={isPending}

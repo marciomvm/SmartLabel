@@ -57,3 +57,5 @@ coverage.xml
 # generated labels
 labels/
 print-service/labels/
+
+print-service/generated_labels/
