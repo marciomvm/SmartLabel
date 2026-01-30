@@ -7,6 +7,7 @@ export default async function BatchesPage() {
     const { data: batches, error } = await supabase
         .from('mush_batches')
         .select('*, parent:mush_batches!parent_id(readable_id)')
+        .neq('status', 'ARCHIVED') // Hide archived by default
         .order('created_at', { ascending: false })
         .limit(50)
 

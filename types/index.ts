@@ -1,5 +1,5 @@
 export type BatchType = 'GRAIN' | 'SUBSTRATE' | 'BULK'
-export type BatchStatus = 'INCUBATING' | 'READY' | 'SOLD' | 'CONTAMINATED'
+export type BatchStatus = 'INCUBATING' | 'READY' | 'SOLD' | 'CONTAMINATED' | 'ARCHIVED'
 
 export interface Batch {
     id: string

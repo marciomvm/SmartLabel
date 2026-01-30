@@ -17,6 +17,38 @@ async function getStats() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'INCUBATING')
 
+    // Forecast Logic
+    const { data: incubatingGrain } = await supabase
+      .from('mush_batches')
+      .select('*, strain:mush_strains(colonization_days)')
+      .eq('status', 'INCUBATING')
+      .eq('type', 'GRAIN')
+
+    const now = new Date()
+    const fiveDaysFromNow = new Date()
+    fiveDaysFromNow.setDate(now.getDate() + 5)
+
+    let readySoonCount = 0
+    // let overdueCount = 0 
+
+    if (incubatingGrain) {
+      incubatingGrain.forEach((batch: any) => {
+        const created = new Date(batch.created_at)
+        const daysToReady = batch.strain?.colonization_days || 14
+        const readyDate = new Date(created)
+        readyDate.setDate(created.getDate() + daysToReady)
+
+        // Check if ready in [now, now+5] OR if it was already ready (and simply not marked yet)
+        // Actually, if it's already ready (past date), it should show up? 
+        // The user asked: "quantos graos vamos disponiveis nos proximos 5 dias"
+        // Usually this means "becoming ready". But if it's already ready time-wise but still incubating, it's also "available soon" (immediately).
+
+        if (readyDate <= fiveDaysFromNow) {
+          readySoonCount++
+        }
+      })
+    }
+
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
@@ -29,7 +61,7 @@ async function getStats() {
       .select('status')
       .gte('created_at', thirtyDaysAgo.toISOString())
 
-    // Expiring batches logic
+    // Expiring batches logic (Old incubating)
     const { data: expiringBatches } = await supabase
       .from('mush_batches')
       .select('readable_id, created_at, type')
@@ -48,10 +80,11 @@ async function getStats() {
       incubating: incubatingCount || 0,
       deathRate,
       revenue: (readyCount || 0) * 20,
-      expiring: expiringBatches || []
+      expiring: expiringBatches || [],
+      readySoon: readySoonCount // New field
     }
   } catch (e) {
-    return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [] }
+    return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [], readySoon: 0 }
   }
 }
 
@@ -103,6 +136,14 @@ export default async function Home() {
           icon={<AlertTriangle className="h-6 w-6 text-red-600" />}
           gradient="from-red-500/10 to-orange-500/5"
           isDestructive={parseFloat(stats.deathRate) > 10}
+        />
+
+        <GlassCard
+          title="Grain Forecast"
+          value={stats.readySoon}
+          subtitle="Ready in next 5 days"
+          icon={<Layers className="h-6 w-6 text-amber-600" />} // import Layers if needed, or use Package
+          gradient="from-amber-500/10 to-yellow-500/5"
         />
       </div>
 
