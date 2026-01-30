@@ -227,3 +227,35 @@ export async function deleteBulkBatches(ids: string[]) {
     revalidatePath('/batches')
     revalidatePath('/')
 }
+
+export async function generateNextBatchId(type: BatchType) {
+    const today = new Date()
+    const dd = String(today.getDate()).padStart(2, '0')
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const yyyy = today.getFullYear()
+    const dateStr = `${dd}${mm}${yyyy}`
+
+    const typePrefix = type === 'GRAIN' ? 'G' : type === 'SUBSTRATE' ? 'S' : 'B'
+
+    const { data: existingToday } = await supabase
+        .from('mush_batches')
+        .select('readable_id')
+        .like('readable_id', `${typePrefix}-${dateStr}-%`)
+        .order('readable_id', { ascending: false })
+        .limit(1)
+
+    let nextSeq = 1
+    if (existingToday && existingToday.length > 0) {
+        const lastId = existingToday[0].readable_id
+        const parts = lastId.split('-')
+        if (parts.length === 3) {
+            const lastSeq = parseInt(parts[2], 10)
+            if (!isNaN(lastSeq)) {
+                nextSeq = lastSeq + 1
+            }
+        }
+    }
+
+    const seqStr = String(nextSeq).padStart(2, '0')
+    return `${typePrefix}-${dateStr}-${seqStr}`
+}

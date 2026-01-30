@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createBatch, getStrains } from '@/actions/batch'
+import { createBatch, getStrains, generateNextBatchId } from '@/actions/batch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -44,6 +44,22 @@ function CreateBatchForm() {
             }
         })
     }, [initialParentReadableId])
+
+    // Auto-generate Batch ID when type changes
+    useEffect(() => {
+        // checks if readable_id is empty or follows the pattern (e.g. G-..., S-..., B-...)
+        // Actually, we should probably just generate a new one if it's default or empty.
+        // User might want to type manually, but "Create New" implies new ID usually.
+        // Let's generate and set.
+        startTransition(async () => {
+            try {
+                const nextId = await generateNextBatchId(formData.type)
+                setFormData(prev => ({ ...prev, readable_id: nextId }))
+            } catch (err) {
+                console.error("Failed to generate ID", err)
+            }
+        })
+    }, [formData.type])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
