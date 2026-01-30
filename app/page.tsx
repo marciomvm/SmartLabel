@@ -12,10 +12,19 @@ async function getStats() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'READY')
 
-    const { count: incubatingCount } = await supabase
+    // Incubating Spawn (Grain)
+    const { count: incubatingSpawnCount } = await supabase
       .from('mush_batches')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'INCUBATING')
+      .eq('type', 'GRAIN')
+
+    // Incubating Kits (Substrate + Bulk)
+    const { count: incubatingKitsCount } = await supabase
+      .from('mush_batches')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'INCUBATING')
+      .in('type', ['SUBSTRATE', 'BULK'])
 
     // Forecast Logic
     const { data: incubatingGrain } = await supabase
@@ -77,11 +86,12 @@ async function getStats() {
 
     return {
       ready: readyCount || 0,
-      incubating: incubatingCount || 0,
+      incubatingSpawn: incubatingSpawnCount || 0,
+      incubatingKits: incubatingKitsCount || 0,
       deathRate,
       revenue: (readyCount || 0) * 20,
       expiring: expiringBatches || [],
-      readySoon: readySoonCount // New field
+      readySoon: readySoonCount
     }
   } catch (e) {
     return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [], readySoon: 0 }
@@ -122,11 +132,19 @@ export default async function Home() {
         />
 
         <GlassCard
-          title="Incubating"
-          value={stats.incubating}
-          subtitle="Batches in progress"
+          title="Incubating Spawn"
+          value={stats.incubatingSpawn}
+          subtitle="Grains colonizing"
           icon={<Activity className="h-6 w-6 text-blue-600" />}
           gradient="from-blue-500/10 to-indigo-500/5"
+        />
+
+        <GlassCard
+          title="Incubating Kits"
+          value={stats.incubatingKits}
+          subtitle="Substrate/Bulk growing"
+          icon={<Layers className="h-6 w-6 text-indigo-600" />}
+          gradient="from-indigo-500/10 to-purple-500/5"
         />
 
         <GlassCard
