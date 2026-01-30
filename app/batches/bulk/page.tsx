@@ -19,6 +19,7 @@ export default function BulkCreatePage() {
         strain_id: '',
         type: 'GRAIN' as BatchType,
         quantity: 10,
+        lc_batch: '',
         notes: ''
     })
 
@@ -65,6 +66,7 @@ export default function BulkCreatePage() {
                     strain_id: isGrainMode ? formData.strain_id : undefined,
                     type: formData.type,
                     quantity: formData.quantity,
+                    lc_batch: formData.lc_batch,
                     notes: formData.notes
                 })
                 setCreatedBatches(batches)
@@ -85,6 +87,7 @@ export default function BulkCreatePage() {
                         batch_id: batch.readable_id,
                         batch_type: batch.type,
                         strain: '',
+                        lc_batch: batch.lc_batch || '',
                         label_size: labelSize
                     })
                 })
@@ -134,24 +137,42 @@ export default function BulkCreatePage() {
 
                         {/* GRAIN MODE: Show Strain Selector */}
                         {isGrainMode && (
-                            <div className="space-y-2 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                                <Label htmlFor="strain" className="font-semibold flex items-center gap-2">
-                                    🌾 Select Strain (Cepa)
-                                </Label>
-                                <select
-                                    id="strain"
-                                    className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    value={formData.strain_id}
-                                    onChange={e => setFormData({ ...formData, strain_id: e.target.value })}
-                                >
-                                    {strains.length === 0 && <option value="">No strains found</option>}
-                                    {strains.map(s => (
-                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-amber-700">
-                                    Grain batches are the root of your production. No parent needed.
-                                </p>
+                            <div className="space-y-4">
+                                <div className="space-y-2 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                    <Label htmlFor="strain" className="font-semibold flex items-center gap-2">
+                                        🌾 Select Strain (Cepa)
+                                    </Label>
+                                    <select
+                                        id="strain"
+                                        className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={formData.strain_id}
+                                        onChange={e => setFormData({ ...formData, strain_id: e.target.value })}
+                                    >
+                                        {strains.length === 0 && <option value="">No strains found</option>}
+                                        {strains.map(s => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-amber-700">
+                                        Grain batches are the root of your production. No parent needed.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                                    <Label htmlFor="lc_batch" className="font-semibold flex items-center gap-2 text-emerald-800">
+                                        🧪 Liquid Culture Batch (LC)
+                                    </Label>
+                                    <Input
+                                        id="lc_batch"
+                                        value={formData.lc_batch}
+                                        onChange={e => setFormData({ ...formData, lc_batch: e.target.value })}
+                                        placeholder="Ex: LC-001 or MYC-202"
+                                        className="h-12 text-lg font-mono"
+                                    />
+                                    <p className="text-xs text-emerald-700">
+                                        Optional: Track which LC was used.
+                                    </p>
+                                </div>
                             </div>
                         )}
 

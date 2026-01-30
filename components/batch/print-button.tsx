@@ -8,9 +8,10 @@ interface PrintButtonProps {
     batchId: string
     batchType: string
     strain?: string
+    lcBatch?: string
 }
 
-export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProps) {
+export function PrintLabelButton({ batchId, batchType, strain, lcBatch }: PrintButtonProps) {
     const [isPending, startTransition] = useTransition()
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
     const [message, setMessage] = useState('')
@@ -30,6 +31,7 @@ export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProp
                         batch_id: batchId,
                         batch_type: batchType,
                         strain: strain || '',
+                        lc_batch: lcBatch || '',
                         label_size: labelSize
                     })
                 })

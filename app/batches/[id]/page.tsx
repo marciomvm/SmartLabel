@@ -107,6 +107,7 @@ export default async function BatchDetailsPage({ params }: { params: Promise<{ i
                             batchId={batch.readable_id}
                             batchType={batch.type}
                             strain={batch.strain?.name}
+                            lcBatch={batch.lc_batch}
                         />
                     </div>
                 </CardContent>

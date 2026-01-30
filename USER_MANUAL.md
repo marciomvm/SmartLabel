@@ -42,13 +42,15 @@ When inoculating a single grain bag:
 6. Tap **Register Batch**.
 
 ### 3. 🖨️ Printing Labels
-After registering a batch:
+Before printing from the computer, you must start the **Print Service**:
+1. Open the project folder on your PC.
+2. Double-click the file **`START_PRINTER.bat`**.
+3. A black window will open. **Keep it open** while you work.
+
+After registering a batch in the app:
 1. Tap the **Print Label** button.
-2. **If on PC**: The label prints automatically (if Print Service is running).
-3. **If on Mobile**: 
-   - The label image creates a popup.
-   - Save the image to your phone.
-   - Open the **NIIMBOT App** and print via Bluetooth.
+2. Select the **Label Size** (Default is 40x30mm).
+3. Tap **Print**.
 
 ### 4. 🧱 Creating Substrate Blocks (Individual)
 When moving Grain to Substrate:

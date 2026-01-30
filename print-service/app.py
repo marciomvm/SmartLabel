@@ -65,8 +65,9 @@ def print_label_endpoint():
     try:
         # 1. Generate Image
         label_size = data.get('label_size', '40x30') # Default to 40x30
-        print(f"🏷️  Generating label for batch: {batch_id} (Size: {label_size})")
-        image_path = generate_label(batch_id, batch_type, strain, label_size=label_size)
+        lc_batch = data.get('lc_batch', '')
+        print(f"🏷️  Generating label for batch: {batch_id} (Size: {label_size}, LC: {lc_batch})")
+        image_path = generate_label(batch_id, batch_type, strain, label_size=label_size, lc_batch=lc_batch)
         print(f"✅ Label generated: {image_path}")
         
         # 2. Print using niimblue-node

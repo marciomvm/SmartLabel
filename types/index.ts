@@ -8,6 +8,7 @@ export interface Batch {
     strain_id?: string
     status: BatchStatus
     parent_id?: string
+    lc_batch?: string
     notes?: string
     created_at: string
     updated_at: string

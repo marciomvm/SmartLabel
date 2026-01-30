@@ -48,7 +48,7 @@ def fit_text(draw, text, max_width, font_path="arial.ttf", max_font_size=30, min
         
     return get_font(min_font_size)
 
-def generate_label(batch_id, batch_type, strain_name, date_str=None, label_size="40x30"):
+def generate_label(batch_id, batch_type, strain_name, date_str=None, label_size="40x30", lc_batch=None):
     """
     Generates a label image based on the selected size.
     Default size: 40x30mm
@@ -64,6 +64,8 @@ def generate_label(batch_id, batch_type, strain_name, date_str=None, label_size=
     # 2. QR Code
     # Payload: Richer data for scanning
     qr_data = f"{batch_id}|{batch_type}|{strain_name}"
+    if lc_batch:
+        qr_data += f"|LC:{lc_batch}"
     
     qr = qrcode.QRCode(box_size=5, border=1)
     qr.add_data(qr_data)
@@ -135,10 +137,15 @@ def generate_label(batch_id, batch_type, strain_name, date_str=None, label_size=
     draw.text((text_start_x, current_y), strain_name, font=font_strain, fill='black')
     current_y += int(30 * f_mult)
     
-    # DATE
+    # DATE & LC
     if not date_str:
         date_str = datetime.now().strftime("%d/%m/%Y")
     
+    if lc_batch:
+        font_lc = get_font(int(14 * f_mult), "bold")
+        draw.text((text_start_x, current_y), f"LC: {lc_batch}", font=font_lc, fill='black')
+        current_y += int(18 * f_mult)
+
     font_date = get_font(int(14 * f_mult))
     draw.text((text_start_x, current_y), date_str, font=font_date, fill='gray')
 

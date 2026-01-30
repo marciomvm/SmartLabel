@@ -26,6 +26,7 @@ export async function createBatch(data: {
     strain_id?: string
     parent_id?: string
     parent_readable_id?: string
+    lc_batch?: string
     notes?: string
 }) {
     let finalParentId = data.parent_id
@@ -106,6 +107,7 @@ export async function createBulkBatches(data: {
     strain_id?: string
     type: BatchType
     quantity: number
+    lc_batch?: string
     notes?: string
 }) {
     let parent_id: string | undefined = undefined
@@ -165,6 +167,7 @@ export async function createBulkBatches(data: {
             type: data.type,
             strain_id,
             parent_id,
+            lc_batch: data.lc_batch || '',
             notes: data.notes || ''
         })
     }

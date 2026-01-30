@@ -22,6 +22,7 @@ function CreateBatchForm() {
         type: 'GRAIN' as BatchType,
         strain_id: '',
         parent_readable_id: initialParentReadableId,
+        lc_batch: '',
         notes: ''
     })
 
@@ -60,6 +61,7 @@ function CreateBatchForm() {
                     type: formData.type,
                     strain_id: formData.strain_id,
                     parent_readable_id: formData.parent_readable_id || undefined,
+                    lc_batch: formData.lc_batch || undefined,
                     notes: formData.notes
                 })
 
@@ -122,6 +124,22 @@ function CreateBatchForm() {
                             </p>
                         )}
                     </div>
+
+                    {formData.type === 'GRAIN' && (
+                        <div className="space-y-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 border-dashed">
+                            <Label htmlFor="lc_batch" className="font-semibold text-emerald-800">Liquid Culture Batch (LC)</Label>
+                            <Input
+                                id="lc_batch"
+                                value={formData.lc_batch}
+                                onChange={e => setFormData({ ...formData, lc_batch: e.target.value })}
+                                placeholder="Ex: LC-001 or MYC-202"
+                                className="font-mono"
+                            />
+                            <p className="text-[10px] text-emerald-700">
+                                Tracking for which LC was used to inoculate this grain.
+                            </p>
+                        </div>
+                    )}
 
                     {formData.type !== 'GRAIN' && (
                         <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-dashed">
