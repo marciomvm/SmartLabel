@@ -80,13 +80,17 @@ export default function BulkCreatePage() {
         setIsPrinting(true)
         try {
             for (const batch of createdBatches) {
+                // Find strain name
+                const matchedStrain = strains.find(s => s.id === batch.strain_id)
+                const strainName = matchedStrain ? matchedStrain.name : 'Unknown Strain'
+
                 await fetch('http://localhost:5000/print-label', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         batch_id: batch.readable_id,
                         batch_type: batch.type,
-                        strain: '',
+                        strain: strainName,
                         lc_batch: batch.lc_batch || '',
                         label_size: labelSize
                     })

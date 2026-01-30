@@ -46,6 +46,8 @@ Before printing from the computer, you must start the **Print Service**:
 1. Open the project folder on your PC.
 2. Double-click the file **`START_PRINTER.bat`**.
 3. A black window will open. **Keep it open** while you work.
+   - The system will **automatically try USB first**.
+   - If not connected via USB, it will try Bluetooth.
 
 After registering a batch in the app:
 1. Tap the **Print Label** button.

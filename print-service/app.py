@@ -9,38 +9,92 @@ app = Flask(__name__)
 CORS(app) # Allow cross-origin requests from Next.js (localhost:3000)
 
 def print_with_niimblue(image_path):
-    """Print using niimblue-node CLI"""
+    """Print using niimblue-node CLI (USB -> BLE fallback)"""
+    
+    # Get the niimblue command
+    npm_path = os.path.expanduser(r'~\AppData\Roaming\npm\niimblue-cli.cmd')
+    if os.path.exists(npm_path):
+        niimblue_cmd = npm_path
+    else:
+        niimblue_cmd = 'niimblue-cli'
+        
+    print(f"🖨️  Using command: {niimblue_cmd}")
+
+    # Helper for cleaner error messages
+    def run_cmd(cmd_list, timeout_sec):
+        try:
+            return subprocess.run(cmd_list, capture_output=True, text=True, timeout=timeout_sec)
+        except FileNotFoundError:
+            return None # Command not found
+        except subprocess.TimeoutExpired:
+            raise
+
+    # 1. Try USB / Serial (COM3)
+    # The B1 often mounts as a COM port (Serial) on Windows
+    print("🔌 Attempting USB/Serial connection (COM3)...")
+    
+    # Try explicit COM3 first since user identified it
+    cmd_serial_com3 = [
+        niimblue_cmd, 'print',
+        '-t', 'serial',
+        '-a', 'COM3',
+        '-p', 'B1', 
+        image_path
+    ]
+    
+    # Backup: Try generic USB scanning
+    cmd_usb_auto = [
+        niimblue_cmd, 'print',
+        '-t', 'usb',
+        '-p', 'B1', 
+        image_path
+    ]
+
+    # Execute Serial COM3
     try:
-        # Get the niimblue command
-        npm_path = os.path.expanduser(r'~\AppData\Roaming\npm\niimblue-cli.cmd')
-        if os.path.exists(npm_path):
-            niimblue_cmd = npm_path
-        else:
-            niimblue_cmd = 'niimblue-cli'
+        result = run_cmd(cmd_serial_com3, 40)
+        if result and result.returncode == 0:
+            print(f"✅ COM3 Print successful: {result.stdout}")
+            return True, result.stdout
+        elif result:
+             print(f"⚠️  COM3 failed: {result.stderr.strip()}")
+    except Exception as e:
+        print(f"⚠️  COM3 Error: {str(e)}")
+
+    # Execute USB Auto
+    try:
+        result = run_cmd(cmd_usb_auto, 40)
+        if result and result.returncode == 0:
+            print(f"✅ USB Auto Print successful: {result.stdout}")
+            return True, result.stdout
+    except Exception as e:
+        print(f"⚠️  USB Auto Error: {str(e)}")
         
-        # Build print command
-        cmd = [
-            niimblue_cmd, 'print',
-            '-t', 'ble',
-            '-a', '14:09:06:1c:f6:7d',  # Your B1 address
-            '-p', 'B1',
-            image_path
-        ]
-        
-        print(f"🖨️  Executing: {' '.join(cmd)}")
-        
-        # Execute print command
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        
+    # 2. Try BLE (Fallback)
+    print("📡 Attempting Bluetooth connection...")
+    cmd_ble = [
+        niimblue_cmd, 'print',
+        '-t', 'ble',
+        '-a', '14:09:06:1c:f6:7d', 
+        '-p', 'B1',
+        image_path
+    ]
+    
+    try:
+        result = run_cmd(cmd_ble, 60)
+        if result is None:
+             return False, "Tool 'niimblue-cli' missing."
+
         if result.returncode == 0:
-            print(f"✅ Print successful: {result.stdout}")
+            print(f"✅ BLE Print successful: {result.stdout}")
             return True, result.stdout
         else:
-            print(f"❌ Print failed: {result.stderr}")
-            return False, result.stderr
-            
+             err_msg = result.stderr.strip()
+             print(f"❌ BLE failed: {err_msg}")
+             return False, f"USB & BLE failed. BLE Error: {err_msg}"
+             
     except subprocess.TimeoutExpired:
-        error_msg = "Print timeout - printer may be busy"
+        error_msg = "Print timeout - printer not found or busy"
         print(f"❌ {error_msg}")
         return False, error_msg
     except Exception as e:

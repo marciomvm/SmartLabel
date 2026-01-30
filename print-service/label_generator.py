@@ -6,13 +6,13 @@ from datetime import datetime
 # Label Dimensions Configuration (203 DPI)
 # 1 mm = ~8 pixels
 LABEL_SIZES = {
-    "30x15": {"w": 236, "h": 118, "qr_sz": 100, "qr_x": 10, "text_x": 120, "font_mult": 0.6},
-    "40x20": {"w": 315, "h": 157, "qr_sz": 140, "qr_x": 10, "text_x": 160, "font_mult": 0.8},
-    "40x30": {"w": 315, "h": 236, "qr_sz": 180, "qr_x": 10, "text_x": 200, "font_mult": 1.0}, # Standard
-    "50x30": {"w": 394, "h": 236, "qr_sz": 180, "qr_x": 20, "text_x": 220, "font_mult": 1.1}, # Wider
-    "40x70": {"w": 315, "h": 551, "qr_sz": 250, "qr_x": 32, "text_x": 20, "text_y_start": 280, "vertical": True, "font_mult": 1.2}, # Vertical Long
-    "50x50": {"w": 394, "h": 394, "qr_sz": 280, "qr_x": 57, "text_x": 20, "text_y_start": 300, "vertical": True, "font_mult": 1.2}, # Square
-    "50x80": {"w": 394, "h": 630, "qr_sz": 350, "qr_x": 22, "text_x": 20, "text_y_start": 380, "vertical": True, "font_mult": 1.4},
+    "30x15": {"w": 240, "h": 118, "qr_sz": 100, "qr_x": 10, "text_x": 120, "font_mult": 0.6},
+    "40x20": {"w": 320, "h": 157, "qr_sz": 140, "qr_x": 10, "text_x": 160, "font_mult": 0.8},
+    "40x30": {"w": 320, "h": 240, "qr_sz": 180, "qr_x": 10, "text_x": 200, "font_mult": 1.0}, # Standard
+    "50x30": {"w": 400, "h": 240, "qr_sz": 180, "qr_x": 20, "text_x": 220, "font_mult": 1.1}, # Wider
+    "40x70": {"w": 320, "h": 560, "qr_sz": 250, "qr_x": 32, "text_x": 20, "text_y_start": 280, "vertical": True, "font_mult": 1.2}, # Vertical Long
+    "50x50": {"w": 400, "h": 400, "qr_sz": 280, "qr_x": 57, "text_x": 20, "text_y_start": 300, "vertical": True, "font_mult": 1.2}, # Square
+    "50x80": {"w": 400, "h": 640, "qr_sz": 350, "qr_x": 22, "text_x": 20, "text_y_start": 380, "vertical": True, "font_mult": 1.4},
 }
 
 # Native B1 Print Width
