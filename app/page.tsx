@@ -157,7 +157,7 @@ export default async function Home() {
         />
 
         <GlassCard
-          title="Grain Forecast"
+          title="Spawn Forecast"
           value={stats.readySoon}
           subtitle="Ready in next 5 days"
           icon={<Layers className="h-6 w-6 text-amber-600" />} // import Layers if needed, or use Package
