@@ -27,6 +27,7 @@ export default function BulkCreatePage() {
     const [error, setError] = useState('')
     const [isPending, startTransition] = useTransition()
     const [isPrinting, setIsPrinting] = useState(false)
+    const [labelSize, setLabelSize] = useState('40x30')
 
     useEffect(() => {
         getStrains().then(data => {
@@ -83,7 +84,8 @@ export default function BulkCreatePage() {
                     body: JSON.stringify({
                         batch_id: batch.readable_id,
                         batch_type: batch.type,
-                        strain: ''
+                        strain: '',
+                        label_size: labelSize
                     })
                 })
                 await new Promise(r => setTimeout(r, 500))
@@ -120,8 +122,8 @@ export default function BulkCreatePage() {
                                         type="button"
                                         onClick={() => setFormData({ ...formData, type: t })}
                                         className={`p-4 rounded-xl border-2 text-center font-semibold transition-all ${formData.type === t
-                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         {t === 'GRAIN' ? '🌾 Grain' : t === 'SUBSTRATE' ? '🧱 Substrate' : '🍄 Bulk'}
@@ -249,6 +251,21 @@ export default function BulkCreatePage() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Label Size for Printing</label>
+                            <select
+                                value={labelSize}
+                                onChange={(e) => setLabelSize(e.target.value)}
+                                className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                                <option value="40x30">40x30mm (Standard)</option>
+                                <option value="50x30">50x30mm (Wide)</option>
+                                <option value="30x15">30x15mm (Small)</option>
+                                <option value="40x70">40x70mm (Vertical)</option>
+                                <option value="50x50">50x50mm (Square)</option>
+                            </select>
                         </div>
 
                         <div className="flex gap-4">
