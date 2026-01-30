@@ -261,8 +261,9 @@ export default function BulkCreatePage() {
                                 className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             >
                                 <option value="40x30">40x30mm (Standard)</option>
+                                <option value="40x20">40x20mm (Small/Economic)</option>
                                 <option value="50x30">50x30mm (Wide)</option>
-                                <option value="30x15">30x15mm (Small)</option>
+                                <option value="30x15">30x15mm (Tiny)</option>
                                 <option value="40x70">40x70mm (Vertical)</option>
                                 <option value="50x50">50x50mm (Square)</option>
                             </select>

@@ -7,6 +7,7 @@ from datetime import datetime
 # 1 mm = ~8 pixels
 LABEL_SIZES = {
     "30x15": {"w": 236, "h": 118, "qr_sz": 100, "qr_x": 10, "text_x": 120, "font_mult": 0.6},
+    "40x20": {"w": 315, "h": 157, "qr_sz": 140, "qr_x": 10, "text_x": 160, "font_mult": 0.8},
     "40x30": {"w": 315, "h": 236, "qr_sz": 180, "qr_x": 10, "text_x": 200, "font_mult": 1.0}, # Standard
     "50x30": {"w": 394, "h": 236, "qr_sz": 180, "qr_x": 20, "text_x": 220, "font_mult": 1.1}, # Wider
     "40x70": {"w": 315, "h": 551, "qr_sz": 250, "qr_x": 32, "text_x": 20, "text_y_start": 280, "vertical": True, "font_mult": 1.2}, # Vertical Long

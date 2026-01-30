@@ -60,8 +60,9 @@ export function PrintLabelButton({ batchId, batchType, strain }: PrintButtonProp
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <option value="40x30">40x30mm (Standard)</option>
+                    <option value="40x20">40x20mm (Small/Economic)</option>
                     <option value="50x30">50x30mm (Wide)</option>
-                    <option value="30x15">30x15mm (Small)</option>
+                    <option value="30x15">30x15mm (Tiny)</option>
                     <option value="40x70">40x70mm (Vertical)</option>
                     <option value="50x50">50x50mm (Square)</option>
                 </select>
