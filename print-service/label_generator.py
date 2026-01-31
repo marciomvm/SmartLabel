@@ -149,9 +149,11 @@ def generate_label(batch_id, batch_type, strain_name, date_str=None, label_size=
     font_date = get_font(int(14 * f_mult))
     draw.text((text_start_x, current_y), date_str, font=font_date, fill='gray')
 
-    # 4. Resize Canvas to Native Width (384px) if needed for printer logic
-    # The printer.py handles centering, but it expects a file.
-    # We save exactly the size requested. printer.py will center it on 384px.
+
+    # 4. Convert to 1-bit for thermal printer compatibility
+    # Thermal printers like Niimbot B1 expect 1-bit black/white images
+    # Using dithering for best quality on gradients/anti-aliased text
+    img_bw = img.convert('1')
     
     # Save
     if not os.path.exists("generated_labels"):
@@ -159,7 +161,7 @@ def generate_label(batch_id, batch_type, strain_name, date_str=None, label_size=
         
     filename = f"label_{batch_id}_{label_size}.png"
     output_path = os.path.join("generated_labels", filename)
-    img.save(output_path)
+    img_bw.save(output_path)
     
     # Return absolute path
     return os.path.abspath(output_path)
