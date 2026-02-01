@@ -50,14 +50,24 @@ export function BatchActions({ id, currentStatus }: { id: string, currentStatus:
                 )}
 
                 {currentStatus === 'READY' && (
-                    <Button
-                        variant="secondary"
-                        disabled={isPending}
-                        onClick={() => handleUpdate('SOLD')}
-                        className="bg-green-100 text-green-800 hover:bg-green-200"
-                    >
-                        <DollarSign className="mr-2 h-4 w-4" /> Mark Sold
-                    </Button>
+                    <>
+                        <Button
+                            variant="secondary"
+                            disabled={isPending}
+                            onClick={() => handleUpdate('SOLD')}
+                            className="bg-green-100 text-green-800 hover:bg-green-200"
+                        >
+                            <DollarSign className="mr-2 h-4 w-4" /> Mark Sold
+                        </Button>
+                        <Button
+                            variant="outline"
+                            disabled={isPending}
+                            onClick={() => handleUpdate('INCUBATING')}
+                            className="col-span-2 border-amber-200 text-amber-800 hover:bg-amber-50"
+                        >
+                            <AlertTriangle className="mr-2 h-4 w-4" /> Not Ready (Keep Incubating)
+                        </Button>
+                    </>
                 )}
 
                 {/* Contamination is possible for Incubating and Ready */}

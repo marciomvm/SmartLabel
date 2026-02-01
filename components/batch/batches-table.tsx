@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { deleteBulkBatches } from '@/actions/batch'
+import { deleteBulkBatches, updateBatchStatus } from '@/actions/batch'
 import { Button } from '@/components/ui/button'
 import {
     Table,
@@ -13,7 +13,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, CheckSquare, Square, Loader2 } from 'lucide-react'
+import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -191,7 +191,23 @@ export function BatchesTable({ batches = [] }: BatchesTableProps) {
                                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                                         {new Date(batch.created_at).toLocaleDateString()}
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right flex items-center justify-end gap-2">
+                                        {batch.status === 'READY' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    startTransition(async () => {
+                                                        await updateBatchStatus(batch.id, 'SOLD')
+                                                    })
+                                                }}
+                                                className="h-8 w-8 p-0 text-green-600 border-green-200 hover:bg-green-50"
+                                                title="Mark as Sold"
+                                                disabled={isPending}
+                                            >
+                                                <DollarSign className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                         <Button variant="ghost" size="sm" asChild>
                                             <Link href={`/batches/${batch.id}`}>View</Link>
                                         </Button>

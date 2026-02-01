@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowUp, ArrowDown, AlertOctagon } from 'lucide-react'
 import { PrintLabelButton } from '@/components/batch/print-button'
 import { DeleteBatchButton } from '@/components/batch/delete-button'
+import { NotesEditor } from '@/components/batch/notes-editor'
 
 // Next.js 15: params is a Promise
 export default async function BatchDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -166,12 +167,7 @@ export default async function BatchDetailsPage({ params }: { params: Promise<{ i
             </div>
 
             {/* NOTE/EVENTS */}
-            <Card>
-                <CardHeader><CardTitle className="text-sm">Notes</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">{batch.notes || "No notes."}</p>
-                </CardContent>
-            </Card>
+            <NotesEditor id={batch.id} initialNotes={batch.notes} />
 
             {/* DANGER ZONE (Delete) */}
             <div className="border border-red-200 rounded-xl p-6 bg-red-50/50">

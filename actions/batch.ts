@@ -102,6 +102,35 @@ export async function getStrains() {
     return data
 }
 
+export async function getReadyGrainBatches() {
+    const { data, error } = await supabase
+        .from('mush_batches')
+        .select('*, strain:mush_strains(name)')
+        .eq('type', 'GRAIN')
+        .eq('status', 'READY')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching ready grains:', error)
+        return []
+    }
+    return data
+}
+
+export async function updateBatchNotes(id: string, notes: string) {
+    const { error } = await supabase
+        .from('mush_batches')
+        .update({ notes })
+        .eq('id', id)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath(`/batches/${id}`)
+    revalidatePath('/')
+}
+
 export async function createBulkBatches(data: {
     parent_readable_id?: string
     strain_id?: string

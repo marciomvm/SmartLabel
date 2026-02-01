@@ -8,6 +8,7 @@ export default async function BatchesPage() {
         .from('mush_batches')
         .select('*, parent:mush_batches!parent_id(readable_id)')
         .neq('status', 'ARCHIVED') // Hide archived by default
+        .neq('status', 'SOLD') // Hide sold items as requested
         .order('created_at', { ascending: false })
         .limit(50)
 

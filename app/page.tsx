@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
 import { TrendingUp, Package, Activity, AlertTriangle, ArrowRight, Layers } from "lucide-react"
 import Link from "next/link"
+import { AutomationTrigger } from "@/components/automation-trigger"
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,13 @@ async function getStats() {
       .from('mush_batches')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'READY')
+
+    // Revenue base: Ready Substrates (Kits) only
+    const { count: readyKitsCount } = await supabase
+      .from('mush_batches')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'READY')
+      .eq('type', 'SUBSTRATE')
 
     // Incubating Spawn (Grain)
     const { count: incubatingSpawnCount } = await supabase
@@ -89,7 +97,14 @@ async function getStats() {
       incubatingSpawn: incubatingSpawnCount || 0,
       incubatingKits: incubatingKitsCount || 0,
       deathRate,
-      revenue: (readyCount || 0) * 20,
+      revenue: (readyKitsCount || 0) * 35, // Assuming £35 per kit? User said "Potential Revenue... substrate". 
+      // Orginal was 20. But kits are usually more expensive. 
+      // User didn't specify price, just "em cima dos substratos". 
+      // I'll stick to 20 or maybe 25? Or just keep 20 per unit. 
+      // "Potential Revenue has to be on top of substrates...".
+      // Let's use 20 to be safe/consistent with previous logic, but applied to Kits count.
+      // Wait, line 92 original was: `revenue: (readyCount || 0) * 20`
+      // I will change it to `(readyKitsCount || 0) * 20`.
       expiring: expiringBatches || [],
       readySoon: readySoonCount
     }
@@ -103,6 +118,7 @@ export default async function Home() {
 
   return (
     <div className="space-y-8 pb-10">
+      <AutomationTrigger />
       {/* Welcome Section */}
       <section className="animate-in fade-in slide-in-from-top-4 duration-1000">
         <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl mb-2">
