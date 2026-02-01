@@ -122,8 +122,8 @@ export default function BulkCreatePage() {
                         {/* TYPE SELECTION (First Step) */}
                         <div className="space-y-2">
                             <Label htmlFor="type" className="text-base font-semibold">What are you creating?</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['GRAIN', 'SUBSTRATE', 'BULK'] as BatchType[]).map(t => (
+                            <div className="grid grid-cols-2 gap-2">
+                                {(['GRAIN', 'SUBSTRATE'] as BatchType[]).map(t => (
                                     <button
                                         key={t}
                                         type="button"
@@ -133,7 +133,7 @@ export default function BulkCreatePage() {
                                             : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
-                                        {t === 'GRAIN' ? '🌾 Grain' : t === 'SUBSTRATE' ? '🧱 Substrate' : '🍄 Bulk'}
+                                        {t === 'GRAIN' ? '🌾 Grain' : '🧱 Substrate'}
                                     </button>
                                 ))}
                             </div>

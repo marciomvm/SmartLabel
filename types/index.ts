@@ -19,3 +19,17 @@ export interface Strain {
     name: string
     colonization_days: number
 }
+
+export type LCStatus = 'ACTIVE' | 'EXHAUSTED' | 'CONTAMINATED'
+
+export interface LiquidCulture {
+    id: string
+    readable_id: string
+    strain_id?: string
+    strain?: Strain
+    status: LCStatus
+    volume_ml?: number
+    notes?: string
+    created_at: string
+    updated_at: string
+}

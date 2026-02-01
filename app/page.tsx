@@ -97,14 +97,7 @@ async function getStats() {
       incubatingSpawn: incubatingSpawnCount || 0,
       incubatingKits: incubatingKitsCount || 0,
       deathRate,
-      revenue: (readyKitsCount || 0) * 35, // Assuming £35 per kit? User said "Potential Revenue... substrate". 
-      // Orginal was 20. But kits are usually more expensive. 
-      // User didn't specify price, just "em cima dos substratos". 
-      // I'll stick to 20 or maybe 25? Or just keep 20 per unit. 
-      // "Potential Revenue has to be on top of substrates...".
-      // Let's use 20 to be safe/consistent with previous logic, but applied to Kits count.
-      // Wait, line 92 original was: `revenue: (readyCount || 0) * 20`
-      // I will change it to `(readyKitsCount || 0) * 20`.
+      revenue: ((readyKitsCount || 0) + (incubatingKitsCount || 0)) * 20, // Revenue based on Ready + Incubating Kits (Prediction)
       expiring: expiringBatches || [],
       readySoon: readySoonCount
     }
