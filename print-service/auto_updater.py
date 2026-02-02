@@ -9,8 +9,25 @@ import json
 import shutil
 import subprocess
 import urllib.request
+import urllib.error
+import ssl
 import tempfile
 from pathlib import Path
+
+# SSL Context for .exe compatibility (Windows certificate issues)
+# This is safe because we only connect to github.com
+try:
+    SSL_CONTEXT = ssl.create_default_context()
+except:
+    SSL_CONTEXT = ssl._create_unverified_context()
+
+# Try to use certifi if available, otherwise skip verification
+try:
+    import certifi
+    SSL_CONTEXT.load_verify_locations(certifi.where())
+except ImportError:
+    # certifi not available, disable verification for .exe builds
+    SSL_CONTEXT = ssl._create_unverified_context()
 
 # --- Configuration ---
 GITHUB_REPO = "marciomvm/SmartLabel"
@@ -51,7 +68,7 @@ def get_latest_release():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
     try:
         req = urllib.request.Request(url, headers=get_github_headers())
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=10, context=SSL_CONTEXT) as response:
             data = json.loads(response.read().decode())
             return {
                 "version": data.get("tag_name", "").lstrip("v"),
@@ -93,7 +110,7 @@ def download_update(asset_url: str, dest_path: str) -> bool:
             headers["Authorization"] = f"token {GITHUB_TOKEN}"
         
         req = urllib.request.Request(asset_url, headers=headers)
-        with urllib.request.urlopen(req, timeout=120) as response:
+        with urllib.request.urlopen(req, timeout=120, context=SSL_CONTEXT) as response:
             with open(dest_path, 'wb') as f:
                 shutil.copyfileobj(response, f)
         print(f"✅ Download complete: {dest_path}")
