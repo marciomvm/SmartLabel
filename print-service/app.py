@@ -29,18 +29,74 @@ def print_with_niimblue(image_path):
         except subprocess.TimeoutExpired:
             raise
 
-    # 1. Try USB / Serial (COM3)
-    # The B1 often mounts as a COM port (Serial) on Windows
-    print("🔌 Attempting USB/Serial connection (COM3)...")
+    def detect_com_port():
+        """Auto-detect the Niimbot/Serial COM port using PowerShell"""
+        try:
+            # Look for devices with generic serial names
+            cmd = [
+                'powershell', '-Command',
+                'Get-WmiObject Win32_SerialPort | Select-Object -ExpandProperty DeviceID'
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            ports = result.stdout.strip().splitlines()
+            
+            # Prioritize ports that aren't COM1/COM2 (usually system)
+            # Typically USB-Serial is COM3, COM4, etc.
+            candidates = [p.strip() for p in ports if p.strip().startswith('COM') and p.strip() not in ['COM1', 'COM2']]
+            
+            if candidates:
+                print(f"🔎 Detected Candidate Ports: {candidates}")
+                return candidates[0] # Return first candidate (e.g., COM3)
+            
+            # Fallback check for common ports if WMI returns nothing (sometimes requires admin)
+            return 'COM3' 
+        except Exception as e:
+            print(f"⚠️  Port detection failed: {e}")
+            return 'COM3'
+
+    # 1. Try USB / Serial (Auto-Detected)
+    detected_port = detect_com_port()
+    print(f"🔌 Attempting USB/Serial connection ({detected_port} detected)...")
     
-    # Try explicit COM3 first since user identified it
-    cmd_serial_com3 = [
+    cmd_serial_auto = [
         niimblue_cmd, 'print',
         '-t', 'serial',
-        '-a', 'COM3',
+        '-a', detected_port,
         '-p', 'B1', 
         image_path
     ]
+    
+    # Try detected port first
+    try:
+        result = run_cmd(cmd_serial_auto, 40)
+        if result and result.returncode == 0:
+            print(f"✅ Serial {detected_port} Print successful: {result.stdout}")
+            return True, result.stdout
+        elif result:
+            print(f"⚠️  {detected_port} failed. trying others...")
+    except Exception:
+        pass
+
+    # Fallback to hardcoded COM4/COM3 if auto failed and detected was different
+    fallback_ports = ['COM4', 'COM3']
+    if detected_port in fallback_ports: fallback_ports.remove(detected_port)
+    
+    for port in fallback_ports:
+        print(f"🔌 Retrying on {port}...")
+        cmd_fallback = [
+             niimblue_cmd, 'print',
+            '-t', 'serial',
+            '-a', port,
+            '-p', 'B1', 
+            image_path
+        ]
+        try:
+            result = run_cmd(cmd_fallback, 40)
+            if result and result.returncode == 0:
+                print(f"✅ Serial {port} Print successful!")
+                return True, result.stdout
+        except:
+            continue
     
     # Backup: Try generic USB scanning
     cmd_usb_auto = [
@@ -50,16 +106,6 @@ def print_with_niimblue(image_path):
         image_path
     ]
 
-    # Execute Serial COM3
-    try:
-        result = run_cmd(cmd_serial_com3, 40)
-        if result and result.returncode == 0:
-            print(f"✅ COM3 Print successful: {result.stdout}")
-            return True, result.stdout
-        elif result:
-             print(f"⚠️  COM3 failed: {result.stderr.strip()}")
-    except Exception as e:
-        print(f"⚠️  COM3 Error: {str(e)}")
 
     # Execute USB Auto
     try:
