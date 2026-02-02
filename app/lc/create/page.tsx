@@ -15,9 +15,11 @@ export default function CreateLCPage() {
     const router = useRouter()
     const [strains, setStrains] = useState<any[]>([])
     const [formData, setFormData] = useState({
+        readable_id: '',
         strain_id: '',
         volume_ml: 100,
-        notes: ''
+        notes: '',
+        created_at: new Date().toISOString().split('T')[0] // Default (YYYY-MM-DD for input)
     })
     const [error, setError] = useState('')
     const [isPending, startTransition] = useTransition()
@@ -25,12 +27,18 @@ export default function CreateLCPage() {
     const [isPrinting, setIsPrinting] = useState(false)
 
     useEffect(() => {
-        getStrains().then(data => {
-            setStrains(data || [])
-            if (data && data.length > 0) {
-                setFormData(prev => ({ ...prev, strain_id: data[0].id }))
+        const load = async () => {
+            const strainsData = await getStrains()
+            setStrains(strainsData || [])
+            if (strainsData && strainsData.length > 0) {
+                setFormData(prev => ({ ...prev, strain_id: strainsData[0].id }))
             }
-        })
+            // Generate next ID
+            const { generateNextLCId } = await import('@/actions/lc')
+            const nextId = await generateNextLCId()
+            setFormData(prev => ({ ...prev, readable_id: nextId }))
+        }
+        load()
     }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -41,13 +49,19 @@ export default function CreateLCPage() {
             setError('Strain is required')
             return
         }
+        if (!formData.readable_id) {
+            setError('ID is required')
+            return
+        }
 
         startTransition(async () => {
             try {
                 const lc = await createLiquidCulture({
+                    readable_id: formData.readable_id,
                     strain_id: formData.strain_id,
                     volume_ml: formData.volume_ml || undefined,
-                    notes: formData.notes || undefined
+                    notes: formData.notes || undefined,
+                    created_at: new Date(formData.created_at).toISOString()
                 })
                 setCreatedLC(lc)
             } catch (err: any) {
@@ -61,6 +75,10 @@ export default function CreateLCPage() {
         setIsPrinting(true)
         try {
             const strain = strains.find(s => s.id === createdLC.strain_id)
+            // Format date as DD/MM/YYYY for printing
+            const dateObj = new Date(createdLC.created_at)
+            const dateStr = dateObj.toLocaleDateString('pt-BR') // DD/MM/YYYY
+
             await fetch('http://localhost:5000/print-label', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -68,7 +86,8 @@ export default function CreateLCPage() {
                     batch_id: createdLC.readable_id,
                     batch_type: 'LC',
                     strain: strain?.name || 'Unknown',
-                    label_size: '40x30'
+                    label_size: '40x30',
+                    date: dateStr
                 })
             })
         } catch (err) {
@@ -90,6 +109,7 @@ export default function CreateLCPage() {
                     <div className="bg-emerald-50 p-6 rounded-2xl space-y-2">
                         <p className="text-4xl font-mono font-bold text-emerald-700">{createdLC.readable_id}</p>
                         <p className="text-muted-foreground">{strain?.name}</p>
+                        <p className="text-sm text-gray-500">{new Date(createdLC.created_at).toLocaleDateString('pt-BR')}</p>
                     </div>
 
                     <div className="flex gap-4">
@@ -119,6 +139,28 @@ export default function CreateLCPage() {
                 <p className="text-muted-foreground mb-6">Create a new LC entry</p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+
+                    <div className="space-y-2">
+                        <Label htmlFor="id">LC ID</Label>
+                        <Input
+                            id="id"
+                            value={formData.readable_id}
+                            onChange={e => setFormData({ ...formData, readable_id: e.target.value })}
+                            placeholder="LC-YYYYMMDD-XX"
+                            className="font-mono bg-muted/50"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                            id="date"
+                            type="date"
+                            value={formData.created_at}
+                            onChange={e => setFormData({ ...formData, created_at: e.target.value })}
+                        />
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="strain" className="font-semibold">Strain (Cepa)</Label>
                         <select

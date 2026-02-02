@@ -39,11 +39,14 @@ export async function generateNextLCId(): Promise<string> {
 }
 
 export async function createLiquidCulture(input: {
+    readable_id?: string
     strain_id: string
     volume_ml?: number
     notes?: string
+    created_at?: string
 }) {
-    const readable_id = await generateNextLCId()
+    // Use provided ID or generate one
+    const readable_id = input.readable_id || await generateNextLCId()
 
     const { data, error } = await supabase
         .from('mush_liquid_cultures')
@@ -52,7 +55,8 @@ export async function createLiquidCulture(input: {
             strain_id: input.strain_id,
             volume_ml: input.volume_ml,
             notes: input.notes,
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            created_at: input.created_at || new Date().toISOString()
         })
         .select()
         .single()
