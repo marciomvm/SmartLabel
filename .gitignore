@@ -59,3 +59,7 @@ labels/
 print-service/labels/
 
 print-service/generated_labels/
+
+# GitHub token (DO NOT COMMIT)
+print-service/github_token.txt
+github_token.txt

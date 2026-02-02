@@ -17,6 +17,16 @@ GITHUB_REPO = "marciomvm/SmartLabel"
 RELEASE_ASSET_NAME = "MushroomPrintService.exe"  # Name of the .exe in releases
 CHECK_UPDATE_ON_START = True
 
+# GitHub Token for private repos (create at: https://github.com/settings/tokens)
+# Token needs 'repo' scope for private repos
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+
+# Fallback: Read from config file if env not set
+if not GITHUB_TOKEN:
+    config_file = Path(__file__).parent / "github_token.txt"
+    if config_file.exists():
+        GITHUB_TOKEN = config_file.read_text().strip()
+
 def get_current_version():
     """Get version from version.txt or return default"""
     version_file = Path(__file__).parent / "version.txt"
@@ -29,11 +39,18 @@ def set_current_version(version: str):
     version_file = Path(__file__).parent / "version.txt"
     version_file.write_text(version)
 
+def get_github_headers():
+    """Get headers for GitHub API requests"""
+    headers = {"User-Agent": "MushroomPrintService"}
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"token {GITHUB_TOKEN}"
+    return headers
+
 def get_latest_release():
     """Fetch latest release info from GitHub API"""
     url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "MushroomPrintService"})
+        req = urllib.request.Request(url, headers=get_github_headers())
         with urllib.request.urlopen(req, timeout=10) as response:
             data = json.loads(response.read().decode())
             return {
@@ -42,6 +59,14 @@ def get_latest_release():
                 "assets": data.get("assets", []),
                 "body": data.get("body", "")
             }
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            print("⚠️  No releases found yet. Create one on GitHub!")
+        elif e.code == 401:
+            print("⚠️  GitHub Token invalid or missing for private repo!")
+        else:
+            print(f"⚠️  GitHub API error: {e.code}")
+        return None
     except Exception as e:
         print(f"⚠️  Could not check for updates: {e}")
         return None
@@ -59,10 +84,15 @@ def download_update(asset_url: str, dest_path: str) -> bool:
     """Download the new executable"""
     print(f"⬇️  Downloading update from: {asset_url}")
     try:
-        req = urllib.request.Request(asset_url, headers={
+        headers = {
             "User-Agent": "MushroomPrintService",
             "Accept": "application/octet-stream"
-        })
+        }
+        # Add token for private repos
+        if GITHUB_TOKEN:
+            headers["Authorization"] = f"token {GITHUB_TOKEN}"
+        
+        req = urllib.request.Request(asset_url, headers=headers)
         with urllib.request.urlopen(req, timeout=120) as response:
             with open(dest_path, 'wb') as f:
                 shutil.copyfileobj(response, f)
