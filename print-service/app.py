@@ -5,6 +5,14 @@ import os
 import sys
 import subprocess
 
+# Auto-update check
+try:
+    from auto_updater import check_for_updates, get_current_version
+    VERSION = get_current_version()
+except ImportError:
+    VERSION = "1.0.0"
+    check_for_updates = None
+
 app = Flask(__name__)
 CORS(app) # Allow cross-origin requests from Next.js (localhost:3000)
 
@@ -195,5 +203,17 @@ def print_label_endpoint():
         return jsonify({"error": error_msg}), 500
 
 if __name__ == '__main__':
-    print("🍄 Print Service running on port 5000...")
+    print(f"🍄 Mushroom Print Service v{VERSION}")
+    print("=" * 40)
+    
+    # Check for updates on startup
+    if check_for_updates:
+        print("🔍 Checking for updates...")
+        try:
+            check_for_updates(auto_apply=True)
+        except Exception as e:
+            print(f"⚠️  Update check failed: {e}")
+    
+    print(f"🚀 Starting server on port 5000...")
     app.run(host='0.0.0.0', port=5000)
+
