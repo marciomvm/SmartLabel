@@ -63,3 +63,8 @@ print-service/generated_labels/
 # GitHub token (DO NOT COMMIT)
 print-service/github_token.txt
 github_token.txt
+
+# Build output (use GitHub Releases instead)
+print-service/dist/
+print-service/build/
+*.spec
