@@ -146,6 +146,7 @@ export async function getBatchesPaginated(page: number = 1, limit: number = 50) 
         .select('*, parent:mush_batches!parent_id(readable_id)')
         .neq('status', 'ARCHIVED')
         .neq('status', 'SOLD')
+        .order('readable_id', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
