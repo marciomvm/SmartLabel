@@ -100,6 +100,35 @@ export async function updateBatchStatus(id: string, status: BatchStatus) {
     return batch as Batch
 }
 
+// Bulk update multiple batches to SOLD status
+export async function markBulkAsSold(ids: string[]) {
+    if (!ids || ids.length === 0) return
+
+    const soldAt = new Date().toISOString()
+
+    const { error } = await supabase
+        .from('mush_batches')
+        .update({ status: 'SOLD', sold_at: soldAt })
+        .in('id', ids)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    // Log events for each batch
+    for (const id of ids) {
+        await supabase.from('mush_events').insert({
+            batch_id: id,
+            action_type: 'SOLD',
+            details: { bulk_sold: true }
+        })
+    }
+
+    revalidatePath('/batches')
+    revalidatePath('/sales')
+    revalidatePath('/')
+}
+
 // Get paginated batches (excluding SOLD and ARCHIVED)
 export async function getBatchesPaginated(page: number = 1, limit: number = 50) {
     const offset = (page - 1) * limit

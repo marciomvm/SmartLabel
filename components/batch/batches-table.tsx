@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { deleteBulkBatches, updateBatchStatus } from '@/actions/batch'
+import { deleteBulkBatches, updateBatchStatus, markBulkAsSold } from '@/actions/batch'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
     Table,
     TableBody,
@@ -21,7 +22,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -62,6 +72,10 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [isPending, startTransition] = useTransition()
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [isSoldDialogOpen, setIsSoldDialogOpen] = useState(false)
+    const [isRangeDialogOpen, setIsRangeDialogOpen] = useState(false)
+    const [rangeStart, setRangeStart] = useState('')
+    const [rangeEnd, setRangeEnd] = useState('')
 
     const totalPages = Math.ceil(totalCount / limit)
     const startItem = (currentPage - 1) * limit + 1
@@ -102,12 +116,70 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
         }
     }
 
+    // Select range of batches based on readable_id pattern
+    const handleSelectRange = () => {
+        if (!rangeStart || !rangeEnd) return
+
+        const newSelected = new Set(selectedIds)
+
+        // Sort batches by readable_id for proper range selection
+        const sortedBatches = [...batches].sort((a, b) =>
+            a.readable_id.localeCompare(b.readable_id)
+        )
+
+        let inRange = false
+        for (const batch of sortedBatches) {
+            if (batch.readable_id === rangeStart) {
+                inRange = true
+            }
+            if (inRange) {
+                newSelected.add(batch.id)
+            }
+            if (batch.readable_id === rangeEnd) {
+                break
+            }
+        }
+
+        // Also try reverse order if start > end
+        if (newSelected.size === selectedIds.size) {
+            let inRangeReverse = false
+            for (const batch of sortedBatches.reverse()) {
+                if (batch.readable_id === rangeStart) {
+                    inRangeReverse = true
+                }
+                if (inRangeReverse) {
+                    newSelected.add(batch.id)
+                }
+                if (batch.readable_id === rangeEnd) {
+                    break
+                }
+            }
+        }
+
+        setSelectedIds(newSelected)
+        setIsRangeDialogOpen(false)
+        setRangeStart('')
+        setRangeEnd('')
+    }
+
     const handleDelete = () => {
         startTransition(async () => {
             try {
                 await deleteBulkBatches(Array.from(selectedIds))
-                setSelectedIds(new Set()) // Clear selection
+                setSelectedIds(new Set())
                 setIsDeleteDialogOpen(false)
+            } catch (err: any) {
+                alert(`Error: ${err.message}`)
+            }
+        })
+    }
+
+    const handleMarkAsSold = () => {
+        startTransition(async () => {
+            try {
+                await markBulkAsSold(Array.from(selectedIds))
+                setSelectedIds(new Set())
+                setIsSoldDialogOpen(false)
             } catch (err: any) {
                 alert(`Error: ${err.message}`)
             }
@@ -127,11 +199,44 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                             <Badge variant="secondary" className="text-sm px-3 py-1">
                                 {selectedCount} Selected
                             </Badge>
+
+                            {/* Mark as Sold Button */}
+                            <AlertDialog open={isSoldDialogOpen} onOpenChange={setIsSoldDialogOpen}>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="default" size="sm" className="gap-2 bg-green-600 hover:bg-green-700">
+                                        <DollarSign className="h-4 w-4" />
+                                        Mark as Sold
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="glass border-green-200">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-green-600">Mark {selectedCount} batches as sold?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will mark all selected batches as SOLD and record the sale date. They will be removed from this list and appear in the sales report.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                handleMarkAsSold()
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            disabled={isPending}
+                                        >
+                                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yes, Mark as Sold'}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
+                            {/* Delete Button */}
                             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="destructive" size="sm" className="gap-2">
                                         <Trash2 className="h-4 w-4" />
-                                        Delete Selected
+                                        Delete
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="glass border-red-200">
@@ -159,11 +264,61 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                         </div>
                     )}
                 </div>
-                <Button asChild>
-                    <Link href="/batches/create">
-                        <Plus className="mr-2 h-4 w-4" /> New Batch
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    {/* Range Select Dialog */}
+                    <Dialog open={isRangeDialogOpen} onOpenChange={setIsRangeDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <ArrowRight className="mr-2 h-4 w-4" />
+                                Select Range
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="glass">
+                            <DialogHeader>
+                                <DialogTitle>Select Batch Range</DialogTitle>
+                                <DialogDescription>
+                                    Enter the start and end batch IDs to select all batches in between.
+                                    Example: S-09022026-01 to S-09022026-10
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex items-center gap-4 py-4">
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium mb-2 block">From</label>
+                                    <Input
+                                        placeholder="e.g. S-09022026-01"
+                                        value={rangeStart}
+                                        onChange={(e) => setRangeStart(e.target.value.toUpperCase())}
+                                        className="font-mono"
+                                    />
+                                </div>
+                                <ArrowRight className="h-5 w-5 text-muted-foreground mt-6" />
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium mb-2 block">To</label>
+                                    <Input
+                                        placeholder="e.g. S-09022026-10"
+                                        value={rangeEnd}
+                                        onChange={(e) => setRangeEnd(e.target.value.toUpperCase())}
+                                        className="font-mono"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsRangeDialogOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSelectRange} disabled={!rangeStart || !rangeEnd}>
+                                    Select Range
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Button asChild>
+                        <Link href="/batches/create">
+                            <Plus className="mr-2 h-4 w-4" /> New Batch
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             {/* Pagination Controls - Top */}
