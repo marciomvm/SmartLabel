@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { QrCode, Home, Box, Menu, Layers, FlaskConical } from "lucide-react"
+import { QrCode, Home, Box, Menu, Layers, FlaskConical, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function Header() {
@@ -14,6 +14,7 @@ export function Header() {
                 <nav className="flex items-center gap-1 md:gap-3">
                     <NavButton href="/" icon={<Home className="h-5 w-5" />} label="Home" />
                     <NavButton href="/batches" icon={<Box className="h-5 w-5" />} label="Batches" />
+                    <NavButton href="/sales" icon={<DollarSign className="h-5 w-5" />} label="Sales" />
                     <NavButton href="/batches/bulk" icon={<Layers className="h-5 w-5" />} label="Bulk Create" />
                     <NavButton href="/lc" icon={<FlaskConical className="h-5 w-5" />} label="Liquid Cultures" />
                     <NavButton href="/settings/strains" icon={<Menu className="h-5 w-5" />} label="Settings" />

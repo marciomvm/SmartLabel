@@ -70,9 +70,15 @@ export async function createBatch(data: {
 }
 
 export async function updateBatchStatus(id: string, status: BatchStatus) {
+    // If marking as SOLD, also set sold_at timestamp
+    const updateData: { status: BatchStatus; sold_at?: string } = { status }
+    if (status === 'SOLD') {
+        updateData.sold_at = new Date().toISOString()
+    }
+
     const { data: batch, error } = await supabase
         .from('mush_batches')
-        .update({ status })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single()
@@ -88,8 +94,77 @@ export async function updateBatchStatus(id: string, status: BatchStatus) {
     })
 
     revalidatePath(`/batches/${batch.id}`)
+    revalidatePath('/batches')
+    revalidatePath('/sales')
     revalidatePath('/')
     return batch as Batch
+}
+
+// Get paginated batches (excluding SOLD and ARCHIVED)
+export async function getBatchesPaginated(page: number = 1, limit: number = 50) {
+    const offset = (page - 1) * limit
+
+    // Get total count first
+    const { count: totalCount } = await supabase
+        .from('mush_batches')
+        .select('*', { count: 'exact', head: true })
+        .neq('status', 'ARCHIVED')
+        .neq('status', 'SOLD')
+
+    // Get paginated data
+    const { data: batches, error } = await supabase
+        .from('mush_batches')
+        .select('*, parent:mush_batches!parent_id(readable_id)')
+        .neq('status', 'ARCHIVED')
+        .neq('status', 'SOLD')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    if (error) {
+        console.error("Batches Fetch Error:", error)
+        return { batches: [], totalCount: 0, page, limit }
+    }
+
+    return {
+        batches: batches || [],
+        totalCount: totalCount || 0,
+        page,
+        limit
+    }
+}
+
+// Get sold batches with date range filter
+export async function getSoldBatches(days: number = 30) {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    const { data: batches, error } = await supabase
+        .from('mush_batches')
+        .select('*, strain:mush_strains(name), parent:mush_batches!parent_id(readable_id)')
+        .eq('status', 'SOLD')
+        .gte('sold_at', startDate.toISOString())
+        .order('sold_at', { ascending: false })
+
+    if (error) {
+        console.error("Sales Fetch Error:", error)
+        return []
+    }
+
+    return batches || []
+}
+
+// Get count of sold items in last 30 days
+export async function getSoldCountLast30Days() {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const { count } = await supabase
+        .from('mush_batches')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'SOLD')
+        .gte('sold_at', thirtyDaysAgo.toISOString())
+
+    return count || 0
 }
 
 export async function getStrains() {

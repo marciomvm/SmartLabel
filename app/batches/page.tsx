@@ -1,20 +1,30 @@
-import { supabase } from '@/lib/supabase'
+import { getBatchesPaginated } from '@/actions/batch'
 import { BatchesTable } from '@/components/batch/batches-table'
 
 export const dynamic = 'force-dynamic'
 
-export default async function BatchesPage() {
-    const { data: batches, error } = await supabase
-        .from('mush_batches')
-        .select('*, parent:mush_batches!parent_id(readable_id)')
-        .neq('status', 'ARCHIVED') // Hide archived by default
-        .neq('status', 'SOLD') // Hide sold items as requested
-        .order('created_at', { ascending: false })
-        .limit(50)
+interface SearchParams {
+    page?: string
+    limit?: string
+}
 
-    if (error) {
-        console.error("Batches Fetch Error:", error)
-    }
+export default async function BatchesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+    const params = await searchParams
+    const page = parseInt(params.page || '1', 10)
+    const limit = parseInt(params.limit || '50', 10)
 
-    return <BatchesTable batches={batches || []} />
+    // Validate limit to allowed values
+    const validLimits = [30, 50, 100]
+    const validatedLimit = validLimits.includes(limit) ? limit : 50
+
+    const { batches, totalCount } = await getBatchesPaginated(page, validatedLimit)
+
+    return (
+        <BatchesTable
+            batches={batches}
+            totalCount={totalCount}
+            currentPage={page}
+            limit={validatedLimit}
+        />
+    )
 }

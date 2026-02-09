@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
-import { TrendingUp, Package, Activity, AlertTriangle, ArrowRight, Layers } from "lucide-react"
+import { TrendingUp, Package, Activity, AlertTriangle, ArrowRight, Layers, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { AutomationTrigger } from "@/components/automation-trigger"
+import { getSoldCountLast30Days } from "@/actions/batch"
 
 export const dynamic = 'force-dynamic'
 
@@ -92,17 +93,21 @@ async function getStats() {
       ? ((contaminatedRecent / totalRecent) * 100).toFixed(1)
       : '0'
 
+    // Get sold count
+    const soldCount = await getSoldCountLast30Days()
+
     return {
       ready: readyCount || 0,
       incubatingSpawn: incubatingSpawnCount || 0,
       incubatingKits: incubatingKitsCount || 0,
       deathRate,
-      revenue: ((readyKitsCount || 0) + (incubatingKitsCount || 0)) * 20, // Revenue based on Ready + Incubating Kits (Prediction)
+      revenue: ((readyKitsCount || 0) + (incubatingKitsCount || 0)) * 20,
       expiring: expiringBatches || [],
-      readySoon: readySoonCount
+      readySoon: readySoonCount,
+      soldLast30Days: soldCount
     }
   } catch (e) {
-    return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [], readySoon: 0 }
+    return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [], readySoon: 0, soldLast30Days: 0 }
   }
 }
 
@@ -169,9 +174,19 @@ export default async function Home() {
           title="Spawn Forecast"
           value={stats.readySoon}
           subtitle="Ready in next 5 days"
-          icon={<Layers className="h-6 w-6 text-amber-600" />} // import Layers if needed, or use Package
+          icon={<Layers className="h-6 w-6 text-amber-600" />}
           gradient="from-amber-500/10 to-yellow-500/5"
         />
+
+        <Link href="/sales">
+          <GlassCard
+            title="Sold (30 Days)"
+            value={stats.soldLast30Days}
+            subtitle="View sales report"
+            icon={<DollarSign className="h-6 w-6 text-emerald-600" />}
+            gradient="from-emerald-500/10 to-green-500/5"
+          />
+        </Link>
       </div>
 
       {/* Alerts Section (BI) */}

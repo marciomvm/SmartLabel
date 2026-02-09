@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { deleteBulkBatches, updateBatchStatus } from '@/actions/batch'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +14,14 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign } from 'lucide-react'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -43,12 +51,36 @@ function StatusBadge({ status }: { status: string }) {
 
 interface BatchesTableProps {
     batches: any[]
+    totalCount: number
+    currentPage: number
+    limit: number
 }
 
-export function BatchesTable({ batches = [] }: BatchesTableProps) {
+export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, limit = 50 }: BatchesTableProps) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [isPending, startTransition] = useTransition()
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
+    const totalPages = Math.ceil(totalCount / limit)
+    const startItem = (currentPage - 1) * limit + 1
+    const endItem = Math.min(currentPage * limit, totalCount)
+
+    // Handle limit change
+    const handleLimitChange = (newLimit: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('limit', newLimit)
+        params.set('page', '1') // Reset to first page
+        router.push(`/batches?${params.toString()}`)
+    }
+
+    // Handle page change
+    const goToPage = (page: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('page', page.toString())
+        router.push(`/batches?${params.toString()}`)
+    }
 
     // Toggle single row selection
     const toggleSelection = (id: string) => {
@@ -132,6 +164,54 @@ export function BatchesTable({ batches = [] }: BatchesTableProps) {
                         <Plus className="mr-2 h-4 w-4" /> New Batch
                     </Link>
                 </Button>
+            </div>
+
+            {/* Pagination Controls - Top */}
+            <div className="flex items-center justify-between bg-card rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">Show</span>
+                    <Select value={limit.toString()} onValueChange={handleLimitChange}>
+                        <SelectTrigger className="w-[80px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="30">30</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <span className="text-sm text-muted-foreground">per page</span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                    {totalCount > 0 ? (
+                        <>Showing <span className="font-medium text-foreground">{startItem}-{endItem}</span> of <span className="font-medium text-foreground">{totalCount}</span> items</>
+                    ) : (
+                        'No items'
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-2">
+                        Page {currentPage} of {totalPages || 1}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                    >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
 
             <div className="border rounded-lg bg-card">
@@ -225,6 +305,54 @@ export function BatchesTable({ batches = [] }: BatchesTableProps) {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination Controls - Bottom */}
+            {totalCount > 0 && (
+                <div className="flex items-center justify-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                    </Button>
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number
+                        if (totalPages <= 5) {
+                            pageNum = i + 1
+                        } else if (currentPage <= 3) {
+                            pageNum = i + 1
+                        } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i
+                        } else {
+                            pageNum = currentPage - 2 + i
+                        }
+                        return (
+                            <Button
+                                key={pageNum}
+                                variant={pageNum === currentPage ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => goToPage(pageNum)}
+                                className="w-9"
+                            >
+                                {pageNum}
+                            </Button>
+                        )
+                    })}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                    >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }
