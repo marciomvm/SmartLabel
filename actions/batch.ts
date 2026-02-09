@@ -130,22 +130,35 @@ export async function markBulkAsSold(ids: string[]) {
 }
 
 // Get paginated batches (excluding SOLD and ARCHIVED)
-export async function getBatchesPaginated(page: number = 1, limit: number = 50) {
+export async function getBatchesPaginated(page: number = 1, limit: number = 50, search: string = '') {
     const offset = (page - 1) * limit
 
-    // Get total count first
-    const { count: totalCount } = await supabase
+    // Build base query for count
+    let countQuery = supabase
         .from('mush_batches')
         .select('*', { count: 'exact', head: true })
         .neq('status', 'ARCHIVED')
         .neq('status', 'SOLD')
 
-    // Get paginated data
-    const { data: batches, error } = await supabase
+    // Build base query for data
+    let dataQuery = supabase
         .from('mush_batches')
         .select('*, parent:mush_batches!parent_id(readable_id)')
         .neq('status', 'ARCHIVED')
         .neq('status', 'SOLD')
+
+    // Apply search filter if provided
+    if (search) {
+        const searchPattern = `${search}%`
+        countQuery = countQuery.ilike('readable_id', searchPattern)
+        dataQuery = dataQuery.ilike('readable_id', searchPattern)
+    }
+
+    // Get total count
+    const { count: totalCount } = await countQuery
+
+    // Get paginated data with ordering
+    const { data: batches, error } = await dataQuery
         .order('readable_id', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)

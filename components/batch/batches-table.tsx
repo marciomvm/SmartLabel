@@ -31,7 +31,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight, ArrowRight, Search, X } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -64,9 +64,10 @@ interface BatchesTableProps {
     totalCount: number
     currentPage: number
     limit: number
+    search?: string
 }
 
-export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, limit = 50 }: BatchesTableProps) {
+export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, limit = 50, search = '' }: BatchesTableProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -76,10 +77,32 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
     const [isRangeDialogOpen, setIsRangeDialogOpen] = useState(false)
     const [rangeStart, setRangeStart] = useState('')
     const [rangeEnd, setRangeEnd] = useState('')
+    const [searchInput, setSearchInput] = useState(search)
 
     const totalPages = Math.ceil(totalCount / limit)
     const startItem = (currentPage - 1) * limit + 1
     const endItem = Math.min(currentPage * limit, totalCount)
+
+    // Handle search
+    const handleSearch = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (searchInput) {
+            params.set('search', searchInput.toUpperCase())
+        } else {
+            params.delete('search')
+        }
+        params.set('page', '1')
+        router.push(`/batches?${params.toString()}`)
+    }
+
+    // Clear search
+    const clearSearch = () => {
+        setSearchInput('')
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('search')
+        params.set('page', '1')
+        router.push(`/batches?${params.toString()}`)
+    }
 
     // Handle limit change
     const handleLimitChange = (newLimit: string) => {
@@ -191,6 +214,40 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
 
     return (
         <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="flex items-center gap-2">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by ID prefix (e.g. S-3101)"
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="pl-10 pr-10 font-mono"
+                    />
+                    {searchInput && (
+                        <button
+                            onClick={clearSearch}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+                <Button onClick={handleSearch} variant="secondary">
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                </Button>
+                {search && (
+                    <Badge variant="outline" className="gap-1">
+                        Filtering: {search}
+                        <button onClick={clearSearch} className="ml-1 hover:text-red-500">
+                            <X className="h-3 w-3" />
+                        </button>
+                    </Badge>
+                )}
+            </div>
+
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl font-bold">Inventory</h1>
