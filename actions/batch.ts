@@ -130,7 +130,7 @@ export async function markBulkAsSold(ids: string[]) {
 }
 
 // Get paginated batches (excluding SOLD and ARCHIVED)
-export async function getBatchesPaginated(page: number = 1, limit: number = 50, search: string = '') {
+export async function getBatchesPaginated(page: number = 1, limit: number = 50, search: string = '', type?: BatchType | 'ALL') {
     const offset = (page - 1) * limit
 
     // Build base query for count
@@ -146,6 +146,12 @@ export async function getBatchesPaginated(page: number = 1, limit: number = 50, 
         .select('*, parent:parent_id(readable_id, lc_batch)')
         .neq('status', 'ARCHIVED')
         .neq('status', 'SOLD')
+
+    // Apply type filter if provided and not 'ALL'
+    if (type && type !== 'ALL') {
+        countQuery = countQuery.eq('type', type)
+        dataQuery = dataQuery.eq('type', type)
+    }
 
     // Apply search filter if provided
     if (search) {

@@ -59,15 +59,18 @@ function StatusBadge({ status }: { status: string }) {
     )
 }
 
+import { BatchType } from '@/types'
+
 interface BatchesTableProps {
     batches: any[]
     totalCount: number
     currentPage: number
     limit: number
     search?: string
+    type?: BatchType | 'ALL'
 }
 
-export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, limit = 50, search = '' }: BatchesTableProps) {
+export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, limit = 50, search = '', type = 'ALL' }: BatchesTableProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -126,6 +129,18 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
     const handleLimitChange = (newLimit: string) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('limit', newLimit)
+        params.set('page', '1') // Reset to first page
+        router.push(`/batches?${params.toString()}`)
+    }
+
+    // Handle type filter change
+    const handleTypeChange = (newType: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (newType === 'ALL') {
+            params.delete('type')
+        } else {
+            params.set('type', newType)
+        }
         params.set('page', '1') // Reset to first page
         router.push(`/batches?${params.toString()}`)
     }
@@ -256,6 +271,21 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                     <Search className="h-4 w-4 mr-2" />
                     Search
                 </Button>
+
+                <div className="flex items-center gap-2 border-l pl-2 border-muted ml-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase hidden sm:inline">Type:</span>
+                    <Select value={type} onValueChange={handleTypeChange}>
+                        <SelectTrigger className="w-[130px] h-9">
+                            <SelectValue placeholder="All types" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">All Types</SelectItem>
+                            <SelectItem value="GRAIN">🌾 Grain</SelectItem>
+                            <SelectItem value="SUBSTRATE">🧱 Substrate</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 {search && (
                     <Badge variant="outline" className="gap-1">
                         Filtering: {search}
