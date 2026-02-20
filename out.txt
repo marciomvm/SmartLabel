@@ -1,0 +1,11 @@
+{
+  "id": "d34e5f9d-6835-4ea0-89be-6b38c14bd819",
+  "created_at": "2026-02-16T19:44:17.531714+00:00",
+  "type": "SUBSTRATE",
+  "parent": {
+    "type": "GRAIN"
+  }
+}
+
+Total SUBSTRATE this month: 111
+Substrates with GRAIN parent: 111

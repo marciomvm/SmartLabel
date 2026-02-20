@@ -96,6 +96,18 @@ async function getStats() {
     // Get sold count
     const soldCount = await getSoldCountLast30Days()
 
+    // Kits Inoculated This Month (Substrate explicitly grown from Grain)
+    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+    const { data: inoculatedKitsData } = await supabase
+      .from('mush_batches')
+      .select('id, parent:parent_id(type)')
+      .eq('type', 'SUBSTRATE')
+      .gte('created_at', firstDayOfMonth)
+
+    const inoculatedKitsThisMonth = inoculatedKitsData
+      ? inoculatedKitsData.filter((b: any) => b.parent?.type === 'GRAIN').length
+      : 0
+
     return {
       ready: readyCount || 0,
       incubatingSpawn: incubatingSpawnCount || 0,
@@ -104,10 +116,11 @@ async function getStats() {
       revenue: ((readyKitsCount || 0) + (incubatingKitsCount || 0)) * 20,
       expiring: expiringBatches || [],
       readySoon: readySoonCount,
-      soldLast30Days: soldCount
+      soldLast30Days: soldCount,
+      inoculatedThisMonth: inoculatedKitsThisMonth
     }
   } catch (e) {
-    return { ready: 0, incubating: 0, deathRate: '0', revenue: 0, expiring: [], readySoon: 0, soldLast30Days: 0 }
+    return { ready: 0, incubatingSpawn: 0, incubatingKits: 0, deathRate: '0', revenue: 0, expiring: [], readySoon: 0, soldLast30Days: 0, inoculatedThisMonth: 0 }
   }
 }
 
@@ -187,6 +200,14 @@ export default async function Home() {
             gradient="from-emerald-500/10 to-green-500/5"
           />
         </Link>
+
+        <GlassCard
+          title="Inoculated Kits"
+          value={stats.inoculatedThisMonth}
+          subtitle="Grown from grain this month"
+          icon={<Package className="h-6 w-6 text-fuchsia-600" />}
+          gradient="from-fuchsia-500/10 to-pink-500/5"
+        />
       </div>
 
       {/* Alerts Section (BI) */}
