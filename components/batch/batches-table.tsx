@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { deleteBulkBatches, updateBatchStatus, markBulkAsSold } from '@/actions/batch'
@@ -83,7 +83,25 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
     const startItem = (currentPage - 1) * limit + 1
     const endItem = Math.min(currentPage * limit, totalCount)
 
-    // Handle search
+    // Handle real-time auto search with debounce
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchInput !== (search || '')) {
+                const params = new URLSearchParams(searchParams.toString())
+                if (searchInput) {
+                    params.set('search', searchInput)
+                } else {
+                    params.delete('search')
+                }
+                params.set('page', '1')
+                router.push(`/batches?${params.toString()}`)
+            }
+        }, 400) // 400ms debounce
+
+        return () => clearTimeout(timeoutId)
+    }, [searchInput, search, router, searchParams])
+
+    // Manual Handle search (keep for fallback/button)
     const handleSearch = () => {
         const params = new URLSearchParams(searchParams.toString())
         if (searchInput) {
@@ -445,6 +463,7 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                             </TableHead>
                             <TableHead>ID</TableHead>
                             <TableHead>Type</TableHead>
+                            <TableHead className="hidden md:table-cell">LC</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="hidden md:table-cell">Parent</TableHead>
                             <TableHead className="hidden md:table-cell">Created</TableHead>
@@ -474,6 +493,9 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                                         </Link>
                                     </TableCell>
                                     <TableCell>{batch.type}</TableCell>
+                                    <TableCell className="hidden md:table-cell font-mono text-muted-foreground text-xs">
+                                        {batch.lc_batch || '-'}
+                                    </TableCell>
                                     <TableCell>
                                         <StatusBadge status={batch.status} />
                                     </TableCell>
@@ -509,7 +531,7 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                         })}
                         {(!batches || batches.length === 0) && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                     No batches found.
                                 </TableCell>
                             </TableRow>
