@@ -138,7 +138,7 @@ export default async function Home() {
           Hello, <span className="text-gradient">CEO</span> 🍄
         </h1>
         <p className="text-muted-foreground text-lg max-w-[600px]">
-          Management system for the mushroom factory. Here is your current production status.
+          Management system for the FungiHub factory. Here is your current production status.
         </p>
       </section>
 

@@ -19,8 +19,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Mushroom MVP",
-  description: "Mushroom Factory Production System",
+  title: "FungiHub",
+  description: "Advanced Mushroom Production & Inventory Management",
   manifest: "/manifest.json", // Prepare for PWA
 };
 
