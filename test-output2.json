@@ -1,0 +1,6 @@
+{
+  "code": "PGRST200",
+  "details": "Searched for a foreign key relationship between 'mush_batches' and 'mush_batches' using the hint 'mush_batches_parent_id_fkey' in the schema 'public', but no matches were found.",
+  "hint": null,
+  "message": "Could not find a relationship between 'mush_batches' and 'mush_batches' in the schema cache"
+}
