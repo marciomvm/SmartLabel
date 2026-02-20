@@ -143,7 +143,7 @@ export async function getBatchesPaginated(page: number = 1, limit: number = 50, 
     // Build base query for data
     let dataQuery = supabase
         .from('mush_batches')
-        .select('*, parent:mush_batches!parent_id(readable_id)')
+        .select('*, parent:parent_id(readable_id)')
         .neq('status', 'ARCHIVED')
         .neq('status', 'SOLD')
 
@@ -183,7 +183,7 @@ export async function getSoldBatches(days: number = 30) {
 
     const { data: batches, error } = await supabase
         .from('mush_batches')
-        .select('*, strain:mush_strains(name), parent:mush_batches!parent_id(readable_id)')
+        .select('*, strain:mush_strains(name), parent:parent_id(readable_id)')
         .eq('status', 'SOLD')
         .gte('sold_at', startDate.toISOString())
         .order('sold_at', { ascending: false })

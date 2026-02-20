@@ -1,0 +1,74 @@
+{
+  "required": [
+    "id",
+    "readable_id",
+    "type",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "default": "extensions.uuid_generate_v4()",
+      "description": "Note:\nThis is a Primary Key.<pk/>",
+      "format": "uuid",
+      "type": "string"
+    },
+    "readable_id": {
+      "format": "text",
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "GRAIN",
+        "SUBSTRATE",
+        "BULK"
+      ],
+      "format": "public.mush_batch_type",
+      "type": "string"
+    },
+    "strain_id": {
+      "description": "Note:\nThis is a Foreign Key to `mush_strains.id`.<fk table='mush_strains' column='id'/>",
+      "format": "uuid",
+      "type": "string"
+    },
+    "status": {
+      "default": "INCUBATING",
+      "enum": [
+        "INCUBATING",
+        "READY",
+        "SOLD",
+        "CONTAMINATED",
+        "ARCHIVED"
+      ],
+      "format": "public.mush_batch_status",
+      "type": "string"
+    },
+    "parent_id": {
+      "description": "Note:\nThis is a Foreign Key to `mush_batches.id`.<fk table='mush_batches' column='id'/>",
+      "format": "uuid",
+      "type": "string"
+    },
+    "notes": {
+      "format": "text",
+      "type": "string"
+    },
+    "created_at": {
+      "default": "now()",
+      "format": "timestamp with time zone",
+      "type": "string"
+    },
+    "updated_at": {
+      "default": "now()",
+      "format": "timestamp with time zone",
+      "type": "string"
+    },
+    "lc_batch": {
+      "format": "text",
+      "type": "string"
+    },
+    "sold_at": {
+      "format": "timestamp with time zone",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
