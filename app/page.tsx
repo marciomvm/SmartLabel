@@ -3,7 +3,8 @@ import { supabase } from "@/lib/supabase"
 import { TrendingUp, Package, Activity, AlertTriangle, ArrowRight, Layers, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { AutomationTrigger } from "@/components/automation-trigger"
-import { getSoldCountLast30Days } from "@/actions/batch"
+import { getSoldCountLast30Days, getSixMonthInoculationStats } from "@/actions/batch"
+import { InoculationChart } from "@/components/dashboard/inoculation-chart"
 
 export const dynamic = 'force-dynamic'
 
@@ -126,6 +127,7 @@ async function getStats() {
 
 export default async function Home() {
   const stats = await getStats()
+  const sixMonthStats = await getSixMonthInoculationStats()
 
   return (
     <div className="space-y-8 pb-10">
@@ -208,6 +210,10 @@ export default async function Home() {
           icon={<Package className="h-6 w-6 text-fuchsia-600" />}
           gradient="from-fuchsia-500/10 to-pink-500/5"
         />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full mt-6">
+        <InoculationChart data={sixMonthStats} />
       </div>
 
       {/* Alerts Section (BI) */}

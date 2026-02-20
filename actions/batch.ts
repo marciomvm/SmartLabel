@@ -406,3 +406,54 @@ export async function generateNextBatchId(type: BatchType) {
     const seqStr = String(nextSeq).padStart(2, '0')
     return `${typePrefix}-${dateStr}-${seqStr}`
 }
+
+export async function getSixMonthInoculationStats() {
+    // Generate the last 6 months buckets
+    const months: { [key: string]: { month: string; grain: number; kits: number } } = {}
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    const now = new Date()
+    // Go back 5 full months from current month (total 6 months window)
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+
+    // Pre-fill buckets to ensure 0s are shown for months with no data
+    for (let i = 0; i < 6; i++) {
+        const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1)
+        const key = `${d.getFullYear()}-${d.getMonth()}`
+        months[key] = {
+            month: monthNames[d.getMonth()],
+            grain: 0,
+            kits: 0
+        }
+    }
+
+    // Fetch batches in this window
+    const { data: batches, error } = await supabase
+        .from('mush_batches')
+        .select('created_at, type, parent:parent_id(type)')
+        .in('type', ['GRAIN', 'SUBSTRATE'])
+        .gte('created_at', startDate.toISOString())
+
+    if (error) {
+        console.error("Error fetching 6-month stats:", error)
+        return []
+    }
+
+    // Aggregate
+    batches?.forEach((batch: any) => {
+        const d = new Date(batch.created_at)
+        const key = `${d.getFullYear()}-${d.getMonth()}`
+
+        if (months[key]) {
+            if (batch.type === 'GRAIN') {
+                months[key].grain++
+            } else if (batch.type === 'SUBSTRATE' && batch.parent?.type === 'GRAIN') {
+                // Kits are substrates that came directly from grain
+                months[key].kits++
+            }
+        }
+    })
+
+    // Return as array sorted chronologically
+    return Object.values(months)
+}
