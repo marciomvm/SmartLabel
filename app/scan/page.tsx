@@ -1,11 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, QrCode } from 'lucide-react'
+import { Loader2, QrCode, Package } from 'lucide-react'
 import { getBatchByReadableId } from '@/actions/batch'
 
 export default function ScanPage() {
@@ -101,13 +102,21 @@ export default function ScanPage() {
             </Card>
 
             {/* Quick Actions for Manual Mobile Use */}
-            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-                <Button variant="outline" className="h-16" onClick={() => router.push('/batches/create')}>
-                    Manual Create
+            <div className="grid grid-cols-1 gap-4 w-full max-w-md">
+                <Button variant="default" className="h-20 text-xl gap-2 shadow-lg hover:shadow-primary/20" asChild>
+                    <Link href="/scan/batch">
+                        <Package className="h-6 w-6" />
+                        Enter Batch Mode
+                    </Link>
                 </Button>
-                <Button variant="outline" className="h-16" onClick={() => router.push('/batches')}>
-                    View List
-                </Button>
+                <div className="grid grid-cols-2 gap-4">
+                    <Button variant="outline" className="h-16" onClick={() => router.push('/batches/create')}>
+                        Manual Create
+                    </Button>
+                    <Button variant="outline" className="h-16" onClick={() => router.push('/batches')}>
+                        View List
+                    </Button>
+                </div>
             </div>
         </div>
     )

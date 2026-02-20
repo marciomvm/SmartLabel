@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation'
 export async function getBatchByReadableId(readableId: string) {
     const { data, error } = await supabase
         .from('mush_batches')
-        .select('*')
+        .select('*, strain:mush_strains(name)')
         .eq('readable_id', readableId)
         .single()
 
@@ -176,6 +176,40 @@ export async function revertBatchStatus(id: string, targetStatus: 'INCUBATING' |
     })
 
     revalidatePath(`/batches/${id}`)
+    revalidatePath('/batches')
+    revalidatePath('/sales')
+    revalidatePath('/')
+}
+
+// Generic bulk status update
+export async function updateBulkStatus(ids: string[], status: BatchStatus) {
+    if (!ids || ids.length === 0) return
+
+    const updateData: any = { status }
+    if (status === 'SOLD') {
+        updateData.sold_at = new Date().toISOString()
+    } else {
+        updateData.sold_at = null
+    }
+
+    const { error } = await supabase
+        .from('mush_batches')
+        .update(updateData)
+        .in('id', ids)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    // Log events
+    for (const id of ids) {
+        await supabase.from('mush_events').insert({
+            batch_id: id,
+            action_type: 'BULK_STATUS_UPDATE',
+            details: { new_status: status }
+        })
+    }
+
     revalidatePath('/batches')
     revalidatePath('/sales')
     revalidatePath('/')
@@ -467,7 +501,7 @@ export async function generateNextBatchId(type: BatchType) {
 
 export async function getSixMonthInoculationStats() {
     // Generate the last 6 months buckets
-    const months: { [key: string]: { month: string; grain: number; kits: number } } = {}
+    const months: { [key: string]: { month: string; grain: number; kits: number; contaminated: number } } = {}
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     const now = new Date()
