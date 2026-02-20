@@ -15,7 +15,7 @@ export function PrintLabelButton({ batchId, batchType, strain, lcBatch }: PrintB
     const [isPending, startTransition] = useTransition()
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
     const [message, setMessage] = useState('')
-    const [labelSize, setLabelSize] = useState('40x30')
+    const [labelSize, setLabelSize] = useState('40x20')
 
     const handlePrint = () => {
         setStatus('idle')

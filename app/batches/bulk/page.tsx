@@ -28,7 +28,7 @@ export default function BulkCreatePage() {
     const [error, setError] = useState('')
     const [isPending, startTransition] = useTransition()
     const [isPrinting, setIsPrinting] = useState(false)
-    const [labelSize, setLabelSize] = useState('40x30')
+    const [labelSize, setLabelSize] = useState('40x20')
 
     useEffect(() => {
         getStrains().then(data => {
