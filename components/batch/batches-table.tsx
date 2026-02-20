@@ -494,7 +494,7 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                                     </TableCell>
                                     <TableCell>{batch.type}</TableCell>
                                     <TableCell className="hidden md:table-cell font-mono text-muted-foreground text-xs">
-                                        {batch.lc_batch || '-'}
+                                        {batch.lc_batch || batch.parent?.lc_batch || '-'}
                                     </TableCell>
                                     <TableCell>
                                         <StatusBadge status={batch.status} />
