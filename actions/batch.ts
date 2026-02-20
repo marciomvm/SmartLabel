@@ -159,8 +159,8 @@ export async function getBatchesPaginated(page: number = 1, limit: number = 50, 
 
     // Get paginated data with ordering
     const { data: batches, error } = await dataQuery
-        .order('readable_id', { ascending: false })
         .order('created_at', { ascending: false })
+        .order('readable_id', { ascending: false })
         .range(offset, offset + limit - 1)
 
     if (error) {
