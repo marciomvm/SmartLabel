@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Loader2, ArrowLeft, Printer, CheckCircle2, Package } from 'lucide-react'
+import { Loader2, ArrowLeft, Printer, CheckCircle2, Package, PlusCircle } from 'lucide-react'
 import { BatchType, Batch } from '@/types'
 import Link from 'next/link'
 
@@ -28,6 +28,7 @@ export default function BulkCreatePage() {
     const [error, setError] = useState('')
     const [isPending, startTransition] = useTransition()
     const [isPrinting, setIsPrinting] = useState(false)
+    const [isAddingOne, setIsAddingOne] = useState(false)
     const [labelSize, setLabelSize] = useState('40x20')
 
     useEffect(() => {
@@ -80,27 +81,56 @@ export default function BulkCreatePage() {
         setIsPrinting(true)
         try {
             for (const batch of createdBatches) {
-                // Find strain name
-                const matchedStrain = strains.find(s => s.id === batch.strain_id)
-                const strainName = matchedStrain ? matchedStrain.name : 'Unknown Strain'
-
-                await fetch('http://localhost:5000/print-label', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        batch_id: batch.readable_id,
-                        batch_type: batch.type,
-                        strain: strainName,
-                        lc_batch: batch.lc_batch || '',
-                        label_size: labelSize
-                    })
-                })
+                await handlePrintSingle(batch)
                 await new Promise(r => setTimeout(r, 500))
             }
         } catch (err) {
             console.error('Print error:', err)
         }
         setIsPrinting(false)
+    }
+
+    const handlePrintSingle = async (batch: Batch) => {
+        // Find strain name
+        const matchedStrain = strains.find(s => s.id === batch.strain_id)
+        const strainName = matchedStrain ? matchedStrain.name : 'Unknown Strain'
+
+        try {
+            const response = await fetch('http://localhost:5000/print-label', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    batch_id: batch.readable_id,
+                    batch_type: batch.type,
+                    strain: strainName,
+                    lc_batch: batch.lc_batch || '',
+                    label_size: labelSize
+                })
+            })
+            return response.ok
+        } catch (err) {
+            console.error('Print error:', err)
+            return false
+        }
+    }
+
+    const handleAddOne = async () => {
+        setIsAddingOne(true)
+        setError('')
+        try {
+            const batches = await createBulkBatches({
+                parent_readable_id: isGrainMode ? undefined : formData.parent_readable_id,
+                strain_id: isGrainMode ? formData.strain_id : undefined,
+                type: formData.type,
+                quantity: 1,
+                lc_batch: formData.lc_batch,
+                notes: formData.notes
+            })
+            setCreatedBatches(prev => [...prev, ...batches])
+        } catch (err: any) {
+            setError(err.message || 'Failed to add batch')
+        }
+        setIsAddingOne(false)
     }
 
     return (
@@ -264,6 +294,7 @@ export default function BulkCreatePage() {
                                         <th className="text-left p-3 font-medium">#</th>
                                         <th className="text-left p-3 font-medium">Batch ID</th>
                                         <th className="text-left p-3 font-medium">Type</th>
+                                        <th className="text-right p-3 font-medium">Print</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -272,6 +303,15 @@ export default function BulkCreatePage() {
                                             <td className="p-3 text-muted-foreground">{idx + 1}</td>
                                             <td className="p-3 font-mono font-bold">{batch.readable_id}</td>
                                             <td className="p-3">{batch.type}</td>
+                                            <td className="p-3 text-right">
+                                                <button
+                                                    onClick={() => handlePrintSingle(batch)}
+                                                    className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors"
+                                                    title="Print indivudual label"
+                                                >
+                                                    <Printer className="h-4 w-4" />
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -294,33 +334,50 @@ export default function BulkCreatePage() {
                             </select>
                         </div>
 
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <Button
                                 onClick={handlePrintAll}
-                                className="flex-1 h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
-                                disabled={isPrinting}
+                                className="flex-[2] h-14 text-lg font-semibold bg-emerald-600 hover:bg-emerald-700"
+                                disabled={isPrinting || isAddingOne}
                             >
                                 {isPrinting ? (
                                     <>
                                         <Loader2 className="animate-spin mr-2" />
-                                        Printing...
+                                        Printing All...
                                     </>
                                 ) : (
                                     <>
                                         <Printer className="mr-2 h-5 w-5" />
-                                        Print All Labels
+                                        Print All
                                     </>
                                 )}
                             </Button>
+
                             <Button
+                                onClick={handleAddOne}
                                 variant="outline"
+                                className="flex-1 h-14 border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-semibold"
+                                disabled={isAddingOne || isPrinting}
+                            >
+                                {isAddingOne ? (
+                                    <Loader2 className="animate-spin h-5 w-5" />
+                                ) : (
+                                    <>
+                                        <PlusCircle className="mr-2 h-5 w-5" />
+                                        Add +1
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                variant="ghost"
                                 onClick={() => {
                                     setCreatedBatches([])
                                     setFormData({ ...formData, parent_readable_id: '' })
                                 }}
                                 className="h-14"
                             >
-                                Create More
+                                Start New
                             </Button>
                         </div>
                     </div>
