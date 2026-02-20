@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { deleteBulkBatches, updateBatchStatus, markBulkAsSold } from '@/actions/batch'
+import { deleteBulkBatches, updateBatchStatus, markBulkAsSold, markBulkAsContaminated } from '@/actions/batch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,7 +31,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight, ArrowRight, Search, X } from 'lucide-react'
+import { Plus, Trash2, CheckSquare, Square, Loader2, DollarSign, ChevronLeft, ChevronRight, ArrowRight, Search, X, AlertTriangle } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -77,6 +77,7 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
     const [isPending, startTransition] = useTransition()
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [isSoldDialogOpen, setIsSoldDialogOpen] = useState(false)
+    const [isContaminatedDialogOpen, setIsContaminatedDialogOpen] = useState(false)
     const [isRangeDialogOpen, setIsRangeDialogOpen] = useState(false)
     const [rangeStart, setRangeStart] = useState('')
     const [rangeEnd, setRangeEnd] = useState('')
@@ -242,6 +243,18 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
         })
     }
 
+    const handleMarkAsContaminated = () => {
+        startTransition(async () => {
+            try {
+                await markBulkAsContaminated(Array.from(selectedIds))
+                setSelectedIds(new Set())
+                setIsContaminatedDialogOpen(false)
+            } catch (err: any) {
+                alert(`Error: ${err.message}`)
+            }
+        })
+    }
+
     const selectedCount = selectedIds.size
     const isAllSelected = batches.length > 0 && selectedCount === batches.length
 
@@ -331,6 +344,37 @@ export function BatchesTable({ batches = [], totalCount = 0, currentPage = 1, li
                                             disabled={isPending}
                                         >
                                             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yes, Mark as Sold'}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
+                            {/* Mark as Contaminated Button */}
+                            <AlertDialog open={isContaminatedDialogOpen} onOpenChange={setIsContaminatedDialogOpen}>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        Mark Contaminated
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="glass border-red-200">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-red-600">Mark {selectedCount} batches as contaminated?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will mark all selected batches as CONTAMINATED. This is usually for items lost to mold or other issues.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                handleMarkAsContaminated()
+                                            }}
+                                            className="bg-red-600 hover:bg-red-700 text-white"
+                                            disabled={isPending}
+                                        >
+                                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yes, Mark Contaminated'}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>

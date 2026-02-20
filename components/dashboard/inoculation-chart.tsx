@@ -7,6 +7,7 @@ interface InoculationData {
     month: string
     grain: number
     kits: number
+    contaminated: number
 }
 
 interface InoculationChartProps {
@@ -72,6 +73,13 @@ export function InoculationChart({ data }: InoculationChartProps) {
                                 dataKey="kits"
                                 name="Kits (Substrates)"
                                 fill="#c026d3"
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={50}
+                            />
+                            <Bar
+                                dataKey="contaminated"
+                                name="Contaminated"
+                                fill="#ef4444"
                                 radius={[4, 4, 0, 0]}
                                 maxBarSize={50}
                             />

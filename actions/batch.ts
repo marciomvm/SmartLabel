@@ -129,6 +129,58 @@ export async function markBulkAsSold(ids: string[]) {
     revalidatePath('/')
 }
 
+// Bulk update multiple batches to CONTAMINATED status
+export async function markBulkAsContaminated(ids: string[]) {
+    if (!ids || ids.length === 0) return
+
+    const { error } = await supabase
+        .from('mush_batches')
+        .update({ status: 'CONTAMINATED' })
+        .in('id', ids)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    // Log events for each batch
+    for (const id of ids) {
+        await supabase.from('mush_events').insert({
+            batch_id: id,
+            action_type: 'CONTAMINATED',
+            details: { bulk_contaminated: true }
+        })
+    }
+
+    revalidatePath('/batches')
+    revalidatePath('/')
+}
+
+// Revert a sold batch back to another status
+export async function revertBatchStatus(id: string, targetStatus: 'INCUBATING' | 'READY') {
+    const { error } = await supabase
+        .from('mush_batches')
+        .update({
+            status: targetStatus,
+            sold_at: null // Clear sold timestamp
+        })
+        .eq('id', id)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    await supabase.from('mush_events').insert({
+        batch_id: id,
+        action_type: 'REVERTED',
+        details: { target_status: targetStatus }
+    })
+
+    revalidatePath(`/batches/${id}`)
+    revalidatePath('/batches')
+    revalidatePath('/sales')
+    revalidatePath('/')
+}
+
 // Get paginated batches (excluding SOLD and ARCHIVED)
 export async function getBatchesPaginated(page: number = 1, limit: number = 50, search: string = '', type?: BatchType | 'ALL') {
     const offset = (page - 1) * limit
@@ -429,14 +481,15 @@ export async function getSixMonthInoculationStats() {
         months[key] = {
             month: monthNames[d.getMonth()],
             grain: 0,
-            kits: 0
+            kits: 0,
+            contaminated: 0
         }
     }
 
-    // Fetch batches in this window
+    // Fetch batches and their contamination events
     const { data: batches, error } = await supabase
         .from('mush_batches')
-        .select('created_at, type, parent:parent_id(type)')
+        .select('created_at, type, status, parent:parent_id(type)')
         .in('type', ['GRAIN', 'SUBSTRATE'])
         .gte('created_at', startDate.toISOString())
 
@@ -456,6 +509,10 @@ export async function getSixMonthInoculationStats() {
             } else if (batch.type === 'SUBSTRATE' && batch.parent?.type === 'GRAIN') {
                 // Kits are substrates that came directly from grain
                 months[key].kits++
+            }
+
+            if (batch.status === 'CONTAMINATED') {
+                months[key].contaminated++
             }
         }
     })

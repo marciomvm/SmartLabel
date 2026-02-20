@@ -12,7 +12,17 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, TrendingUp, Package, Calendar } from 'lucide-react'
+import { ArrowLeft, TrendingUp, Package, Calendar, MoreVertical, RotateCcw, Loader2 } from 'lucide-react'
+import { revertBatchStatus } from '@/actions/batch'
+import { useTransition, useState } from 'react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface SalesTableProps {
     batches: any[]
@@ -30,11 +40,26 @@ const periodLabels: Record<string, string> = {
 export function SalesTable({ batches = [], totalRevenue = 0, currentPeriod = '30d' }: SalesTableProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const [isPending, startTransition] = useTransition()
+    const [revertingId, setRevertingId] = useState<string | null>(null)
 
     const handlePeriodChange = (period: string) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('period', period)
         router.push(`/sales?${params.toString()}`)
+    }
+
+    const handleRevert = (id: string, targetStatus: 'INCUBATING' | 'READY') => {
+        setRevertingId(id)
+        startTransition(async () => {
+            try {
+                await revertBatchStatus(id, targetStatus)
+            } catch (err: any) {
+                alert(`Error: ${err.message}`)
+            } finally {
+                setRevertingId(null)
+            }
+        })
     }
 
     const kitsCount = batches.filter(b => b.type === 'SUBSTRATE' || b.type === 'BULK').length
@@ -118,6 +143,7 @@ export function SalesTable({ batches = [], totalRevenue = 0, currentPeriod = '30
                             <TableHead>Parent</TableHead>
                             <TableHead>Created</TableHead>
                             <TableHead>Sold Date</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -143,11 +169,36 @@ export function SalesTable({ batches = [], totalRevenue = 0, currentPeriod = '30
                                 <TableCell className="text-sm font-medium text-green-600">
                                     {batch.sold_at ? new Date(batch.sold_at).toLocaleDateString() : '-'}
                                 </TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={isPending && revertingId === batch.id}>
+                                                {isPending && revertingId === batch.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <MoreVertical className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="glass">
+                                            <DropdownMenuLabel>Revert to Inventory</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleRevert(batch.id, 'INCUBATING')} className="gap-2">
+                                                <RotateCcw className="h-4 w-4 text-blue-500" />
+                                                Return to Incubating
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleRevert(batch.id, 'READY')} className="gap-2">
+                                                <RotateCcw className="h-4 w-4 text-green-500" />
+                                                Return to Ready
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
                         ))}
                         {batches.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                     No sales found for this period.
                                 </TableCell>
                             </TableRow>
