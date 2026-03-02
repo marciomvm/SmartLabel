@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, QrCode, Package } from 'lucide-react'
 import { getBatchByReadableId } from '@/actions/batch'
+import { parseScanCode } from '@/lib/parseScanCode'
 
 export default function ScanPage() {
     const [code, setCode] = useState('')
@@ -34,13 +35,14 @@ export default function ScanPage() {
 
         startTransition(async () => {
             try {
-                const batch = await getBatchByReadableId(code)
+                const { readableId } = parseScanCode(code)
+                const batch = await getBatchByReadableId(readableId)
 
                 if (batch) {
                     router.push(`/batches/${batch.id}`)
                 } else {
                     // New batch
-                    router.push(`/batches/create?id=${encodeURIComponent(code)}`)
+                    router.push(`/batches/create?id=${encodeURIComponent(readableId)}`)
                 }
             } catch (err) {
                 setError('Failed to process scan. Try again.')

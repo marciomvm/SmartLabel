@@ -19,6 +19,7 @@ import {
     Play
 } from 'lucide-react'
 import { getBatchByReadableId, updateBulkStatus } from '@/actions/batch'
+import { parseScanCode } from '@/lib/parseScanCode'
 import { BatchStatus } from '@/types'
 import Link from 'next/link'
 
@@ -49,7 +50,7 @@ export default function BatchScanPage() {
 
     const handleScan = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()
-        const code = inputCode.trim().toUpperCase()
+        const { readableId: code } = parseScanCode(inputCode)
         if (!code) return
 
         // Prevent duplicates in current session
