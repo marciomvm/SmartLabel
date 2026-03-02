@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Loader2, ArrowLeft, Printer, CheckCircle2, Package, PlusCircle } from 'lucide-react'
 import { BatchType, Batch } from '@/types'
 import Link from 'next/link'
+import { parseScanCode } from '@/lib/parseScanCode'
 
 export default function BulkCreatePage() {
     const router = useRouter()
@@ -62,8 +63,9 @@ export default function BulkCreatePage() {
 
         startTransition(async () => {
             try {
+                const parentId = isGrainMode ? undefined : parseScanCode(formData.parent_readable_id).readableId
                 const batches = await createBulkBatches({
-                    parent_readable_id: isGrainMode ? undefined : formData.parent_readable_id,
+                    parent_readable_id: parentId,
                     strain_id: isGrainMode ? formData.strain_id : undefined,
                     type: formData.type,
                     quantity: formData.quantity,
@@ -118,8 +120,9 @@ export default function BulkCreatePage() {
         setIsAddingOne(true)
         setError('')
         try {
+            const parentId = isGrainMode ? undefined : parseScanCode(formData.parent_readable_id).readableId
             const batches = await createBulkBatches({
-                parent_readable_id: isGrainMode ? undefined : formData.parent_readable_id,
+                parent_readable_id: parentId,
                 strain_id: isGrainMode ? formData.strain_id : undefined,
                 type: formData.type,
                 quantity: 1,
