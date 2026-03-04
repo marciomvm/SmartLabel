@@ -86,7 +86,8 @@ export default function BatchScanPage() {
             console.error(err)
         } finally {
             setIsProcessing(false)
-            inputRef.current?.focus()
+            // Defer focus so it fires after React re-enables the input
+            setTimeout(() => inputRef.current?.focus(), 50)
         }
     }
 
