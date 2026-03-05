@@ -13,7 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Printer, Loader2, Trash2, MoreHorizontal } from 'lucide-react'
+import { Printer, Loader2, Trash2, MoreHorizontal, Check, AlertCircle } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -50,22 +50,31 @@ export function LCTable({ cultures }: LCTableProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [printingId, setPrintingId] = useState<string | null>(null)
+    const [printStatus, setPrintStatus] = useState<Record<string, 'success' | 'error'>>({})
 
     const handlePrint = async (lc: LiquidCulture) => {
         setPrintingId(lc.id)
+        setPrintStatus(prev => { const s = { ...prev }; delete s[lc.id]; return s })
         try {
-            await fetch('http://localhost:5000/print-label', {
+            const response = await fetch('http://localhost:5000/print-label', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     batch_id: lc.readable_id,
                     batch_type: 'LC',
                     strain: (lc.strain as any)?.name || 'Unknown',
-                    label_size: '40x30'
+                    label_size: '40x20'
                 })
             })
+            const data = await response.json()
+            if (data.status === 'printed' || data.success) {
+                setPrintStatus(prev => ({ ...prev, [lc.id]: 'success' }))
+            } else {
+                setPrintStatus(prev => ({ ...prev, [lc.id]: 'error' }))
+            }
         } catch (err) {
             console.error('Print error:', err)
+            setPrintStatus(prev => ({ ...prev, [lc.id]: 'error' }))
         }
         setPrintingId(null)
     }
@@ -123,8 +132,15 @@ export function LCTable({ cultures }: LCTableProps) {
                                     size="icon"
                                     onClick={() => handlePrint(lc)}
                                     disabled={printingId === lc.id}
+                                    title={printStatus[lc.id] === 'success' ? 'Printed!' : printStatus[lc.id] === 'error' ? 'Print failed' : 'Print label'}
                                 >
-                                    {printingId === lc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                                    {printingId === lc.id
+                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                        : printStatus[lc.id] === 'success'
+                                            ? <Check className="h-4 w-4 text-green-600" />
+                                            : printStatus[lc.id] === 'error'
+                                                ? <AlertCircle className="h-4 w-4 text-destructive" />
+                                                : <Printer className="h-4 w-4" />}
                                 </Button>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
